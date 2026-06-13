@@ -465,20 +465,32 @@
 
         function handleDownload(type) {
             if (type === 'photo' && currentData.photos.length > 0) {
-                showToast('📥', 'Downloading all photos...');
-                currentData.photos.forEach((url, index) => {
-                    var filename = 'tiktok_photo_' + Date.now() + '_' + (index + 1) + '.jpg';
+                showToast('📥', 'Downloading ' + currentData.photos.length + ' photos...');
+                
+                // Using a recursive approach with a longer delay to ensure the OS/Browser 
+                // has time to handle each download prompt before the next one triggers.
+                let idx = 0;
+                function downloadNext() {
+                    if (idx >= currentData.photos.length) {
+                        saveToHistory();
+                        return;
+                    }
+                    
+                    let url = currentData.photos[idx];
+                    let filename = 'tiktok_photo_' + Date.now() + '_' + (idx + 1) + '.jpg';
+                    
                     if (tg.downloadFile) {
                         tg.downloadFile({ url: url, file_name: filename });
                     } else {
-                        // For fallback, we can only open one link reliably at a time in most browsers
-                        // but we'll try to open them. Note: This might be blocked by popup blockers.
-                        setTimeout(() => {
-                            tg.openLink(url);
-                        }, index * 500); // Staggering to help with browser limits
+                        tg.openLink(url);
                     }
-                });
-                saveToHistory();
+                    
+                    idx++;
+                    // Reduced delay to 300ms for much faster batch downloading
+                    setTimeout(downloadNext, 300);
+                }
+                
+                downloadNext();
                 return;
             }
 
