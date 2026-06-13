@@ -5,41 +5,31 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>TikTokSave Pro</title>
     <link href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
-    <!-- Load Telegram WebApp SDK -->
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
-    <!-- Load JSZip for batch downloads -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
 
         :root {
             --bg: #050a18;
             --surface: rgba(255,255,255,0.05);
-            --surface-hover: rgba(255,255,255,0.08);
-            --border: rgba(255,255,255,0.08);
+            --border: rgba(255,255,255,0.1);
             --accent: #1a73e8;
             --accent2: #25f4ee;
-            --blue: #1a73e8;
-            --green: #00d26a;
             --text: #ffffff;
             --muted: rgba(255,255,255,0.45);
-            --glass: rgba(255,255,255,0.1);
-            --glass-border: rgba(255,255,255,0.2);
+            --glass: rgba(255,255,255,0.08);
+            --glass-border: rgba(255,255,255,0.15);
         }
 
-        /* Light Theme */
         body.light-theme {
-            --bg: #ffffff;
-            --surface: rgba(0,0,0,0.04);
-            --surface-hover: rgba(0,0,0,0.08);
+            --bg: #f8f9fa;
+            --surface: rgba(0,0,0,0.03);
             --border: rgba(0,0,0,0.08);
             --accent: #1a73e8;
-            --accent2: #25f4ee;
-            --blue: #1a73e8;
-            --green: #00d26a;
+            --accent2: #10b981;
             --text: #050a18;
-            --muted: rgba(0,0,0,0.55);
-            --glass: rgba(0,0,0,0.05);
+            --muted: rgba(0,0,0,0.5);
+            --glass: rgba(0,0,0,0.04);
             --glass-border: rgba(0,0,0,0.1);
         }
 
@@ -49,365 +39,246 @@
             font-family: 'DM Sans', sans-serif;
             min-height: 100vh;
             overflow-x: hidden;
-            transition: background-color 0.3s ease, color 0.3s ease;
+            transition: all 0.3s ease;
         }
 
-        /* Toast Notification */
+        /* Glassmorphism Effect */
+        .glass-panel {
+            background: var(--glass);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid var(--glass-border);
+        }
+
+        /* Toast */
         .toast {
             position: fixed;
             top: 20px;
             left: 50%;
             transform: translateX(-50%) translateY(-100px);
-            background: rgba(20,20,35,0.95);
+            background: rgba(20,20,35,0.9);
+            backdrop-filter: blur(20px);
             border: 1px solid var(--border);
-            border-radius: 14px;
+            border-radius: 16px;
             padding: 12px 20px;
             display: flex;
             align-items: center;
             gap: 10px;
             z-index: 9999;
-            backdrop-filter: blur(20px);
             transition: transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
-            box-shadow: 0 10px 40px rgba(0,0,0,0.5);
+            box-shadow: 0 10px 40px rgba(0,0,0,0.4);
             max-width: 90%;
         }
-
-        body.light-theme .toast { background: rgba(240,240,245,0.95); }
         .toast.show { transform: translateX(-50%) translateY(0); }
-        .toast-icon { font-size: 20px; flex-shrink: 0; }
-        .toast-text { font-size: 13px; color: rgba(255,255,255,0.9); }
-        body.light-theme .toast-text { color: rgba(0,0,0,0.9); }
 
-        /* Counter Badge */
-        .counter-badge {
-            position: fixed;
-            top: 16px;
-            right: 16px;
-            background: var(--glass);
-            border: 1px solid var(--glass-border);
-            border-radius: 20px;
-            padding: 6px 14px;
-            font-size: 12px;
-            font-weight: 600;
-            color: var(--accent);
-            z-index: 200;
-            display: flex;
-            align-items: center;
-            gap: 6px;
-            backdrop-filter: blur(20px);
-            transition: all 0.3s ease;
-            box-shadow: 0 8px 32px rgba(0,0,0,0.1);
-        }
-        .counter-badge .counter-num { font-family: 'Syne', sans-serif; font-weight: 800; font-size: 14px; }
-
-        /* Theme Toggle */
-        .theme-toggle-btn {
-            position: fixed;
-            top: 16px;
-            left: 16px;
-            width: 44px;
-            height: 44px;
-            background: var(--glass);
-            border: 1px solid var(--glass-border);
-            border-radius: 12px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            cursor: pointer;
-            font-size: 20px;
-            transition: all 0.3s ease;
-            z-index: 200;
-            backdrop-filter: blur(20px);
-            box-shadow: 0 8px 32px rgba(0,0,0,0.1);
-        }
-
-        /* Layout */
-        .page { display: none; flex-direction: column; min-height: 100vh; padding-bottom: 74px; position: relative; z-index: 1; }
+        /* Home Page */
+        .page { display: none; flex-direction: column; min-height: 100vh; padding-bottom: 80px; }
         .page.active { display: flex; }
 
-        /* ── HOME PAGE ── */
-        #homePage { align-items: center; padding: 50px 20px 80px; }
-        .logo { display: flex; align-items: center; gap: 12px; margin-bottom: 40px; animation: fadeDown 0.5s ease both; }
-        .logo-icon {
-            width: 52px; height: 52px;
-            background: linear-gradient(135deg, rgba(255,255,255,0.15), rgba(255,255,255,0.05));
-            border: 1px solid rgba(255,255,255,0.2);
-            border-radius: 14px;
-            display: flex; flex-direction: column;
-            overflow: hidden;
-            box-shadow: 0 8px 32px rgba(26,115,232,0.2);
-            backdrop-filter: blur(10px);
-        }
-        body.light-theme .logo-icon { background: linear-gradient(135deg, rgba(0,0,0,0.08), rgba(0,0,0,0.03)); border: 1px solid rgba(0,0,0,0.1); }
-        .logo-icon-top { flex: 1; display: flex; align-items: center; justify-content: center; }
-        .logo-icon-bottom { background: var(--accent); display: flex; align-items: center; justify-content: center; padding: 4px 0; font-size: 13px; line-height: 1; }
-        .logo-text { font-family: 'Syne', sans-serif; font-weight: 800; font-size: 22px; }
+        #homePage { align-items: center; padding: 60px 20px; }
+        .logo { display: flex; align-items: center; gap: 12px; margin-bottom: 40px; }
+        .logo-text { font-family: 'Syne', sans-serif; font-weight: 800; font-size: 24px; }
         .logo-text span { color: var(--accent); }
-
-        .stats-row { display: flex; gap: 16px; margin-bottom: 28px; animation: fadeUp 0.4s ease 0.05s both; }
-        .stat-item { display: flex; align-items: center; gap: 6px; font-size: 12px; color: var(--muted); }
-        .stat-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--green); animation: pulse 2s ease infinite; }
-        @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.4; } }
 
         .card {
             width: 100%; max-width: 400px;
             background: var(--glass);
-            border: 1px solid var(--glass-border);
-            border-radius: 24px;
-            padding: 28px 22px;
             backdrop-filter: blur(30px);
-            animation: fadeUp 0.4s ease 0.1s both;
-            transition: all 0.3s ease;
-            box-shadow: 0 8px 32px rgba(0,0,0,0.1);
+            border: 1px solid var(--glass-border);
+            border-radius: 28px;
+            padding: 30px 24px;
+            box-shadow: 0 12px 40px rgba(0,0,0,0.15);
         }
-        .card-title { font-family: 'Syne', sans-serif; font-size: 24px; font-weight: 700; line-height: 1.2; margin-bottom: 6px; }
-        .card-sub { font-size: 13px; color: var(--muted); margin-bottom: 22px; }
 
-        .input-wrap { position: relative; margin-bottom: 14px; }
-        .input-icon { position: absolute; left: 16px; top: 50%; transform: translateY(-50%); font-size: 18px; opacity: 0.4; pointer-events: none; }
+        .input-wrap { position: relative; margin-bottom: 16px; }
         input[type="text"] {
-            width: 100%; padding: 15px 70px 15px 46px;
-            background: rgba(255,255,255,0.08);
-            border: 1.5px solid var(--glass-border);
-            border-radius: 14px; color: var(--text);
-            font-family: 'DM Sans', sans-serif;
-            font-size: 14px; outline: none; transition: all 0.25s;
-            -webkit-user-select: text; user-select: text; touch-action: manipulation;
-            backdrop-filter: blur(10px);
+            width: 100%; padding: 16px 70px 16px 20px;
+            background: rgba(255,255,255,0.06);
+            border: 1px solid var(--glass-border);
+            border-radius: 16px; color: var(--text);
+            font-size: 14px; outline: none;
         }
-        body.light-theme input[type="text"] { background: rgba(0,0,0,0.04); color: #050a18; }
-        input::placeholder { color: var(--muted); }
-        input:focus { border-color: var(--accent); background: rgba(26,115,232,0.08); box-shadow: 0 0 0 4px rgba(26,115,232,0.1); }
-        .paste-btn {
-            position: absolute; right: 12px; top: 50%; transform: translateY(-50%);
-            background: rgba(26,115,232,0.15); border: 1px solid rgba(26,115,232,0.3); color: var(--accent);
-            border-radius: 8px; padding: 6px 12px; font-size: 12px; font-weight: 500; cursor: pointer;
-            transition: all 0.2s; backdrop-filter: blur(10px);
-        }
-
         .btn-primary {
-            width: 100%; padding: 16px; border-radius: 24px; border: none;
+            width: 100%; padding: 18px; border-radius: 20px; border: none;
             background: linear-gradient(135deg, var(--accent), #2563eb);
-            color: white; font-family: 'Syne', sans-serif; font-size: 15px; font-weight: 700;
-            cursor: pointer; transition: all 0.2s; box-shadow: 0 6px 24px rgba(26,115,232,0.35);
-            position: relative; overflow: hidden;
+            color: white; font-family: 'Syne', sans-serif; font-weight: 700; font-size: 16px;
+            cursor: pointer; box-shadow: 0 8px 24px rgba(26,115,232,0.3);
         }
-        .btn-primary:active { transform: scale(0.97); }
-        .btn-primary:disabled { opacity: 0.5; cursor: not-allowed; }
 
-        .footer-note { text-align: center; font-size: 11px; color: var(--muted); margin-top: 24px; line-height: 1.6; }
-
-        /* ── RESULT PAGE ── */
-        #resultPage { padding: 0 0 80px; }
-        .result-topbar { display: flex; align-items: center; justify-content: space-between; padding: 16px 20px 10px; }
-        .back-btn { background: none; border: none; color: var(--text); font-size: 15px; cursor: pointer; display: flex; align-items: center; gap: 6px; opacity: 0.8; }
-
-        .media-wrapper { padding: 12px 20px 16px 20px; }
-        .media-container {
-            position: relative; width: 100%; aspect-ratio: 1/1;
-            background: linear-gradient(135deg, #1a2a4e, #0f1f3e);
-            border-radius: 20px; overflow: hidden; display: flex; align-items: center; justify-content: center;
-            margin-bottom: 12px; cursor: pointer;
-        }
-        .media-thumbnail { width: 100%; height: 100%; object-fit: cover; }
-        .play-button-overlay {
-            position: absolute; width: 60px; height: 60px; background: rgba(255,255,255,0.2);
-            border: 2px solid rgba(255,255,255,0.4); border-radius: 50%; display: flex; align-items: center; justify-content: center;
-            font-size: 24px; backdrop-filter: blur(10px); z-index: 10;
-        }
-        .video-player-container { position: absolute; inset: 0; display: none; background: #000; z-index: 20; }
-        .video-player-container.playing { display: flex; }
-        .video-player-container video { width: 100%; height: 100%; object-fit: contain; }
-
-        .carousel-wrapper { display: none; }
-        .carousel-wrapper.active { display: block; }
-        .carousel-main-container { position: relative; width: 100%; aspect-ratio: 1/1; background: linear-gradient(135deg, #1a2a4e, #0f1f3e); border-radius: 20px; overflow: hidden; display: flex; align-items: center; justify-content: center; margin-bottom: 12px; }
-        .carousel-image { width: 100%; height: 100%; object-fit: cover; display: none; }
-        .carousel-image.active { display: block; }
-        .thumbnail-strip { display: flex; gap: 8px; overflow-x: auto; padding: 0 20px 12px; }
-        .thumbnail-item { width: 60px; height: 60px; border-radius: 8px; overflow: hidden; flex-shrink: 0; border: 2px solid transparent; opacity: 0.6; }
-        .thumbnail-item.active { border-color: var(--accent); opacity: 1; }
-        .thumbnail-item img { width: 100%; height: 100%; object-fit: cover; }
-
-        /* New UI Additions from Reference */
-        .video-info { padding: 16px 20px; background: var(--glass); border-bottom: 1px solid var(--glass-border); backdrop-filter: blur(20px); border-radius: 16px; margin: 0 20px 12px; }
-        .video-user { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
-        .avatar { width: 38px; height: 38px; background: linear-gradient(135deg, var(--accent), var(--accent2)); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 16px; flex-shrink: 0; }
-        .username { font-family: 'Syne', sans-serif; font-weight: 600; font-size: 14px; background: rgba(26,115,232,0.15); color: var(--accent); padding: 4px 10px; border-radius: 12px; }
-        .video-desc { font-size: 13px; color: var(--muted); line-height: 1.5; margin-top: 8px; }
+        /* Result Page */
+        #resultPage { padding: 0 0 100px; }
+        .media-section { padding: 20px; position: relative; }
         
-        .dl-section-title { padding: 16px 20px 8px; font-size: 12px; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: 0.5px; }
-        .dl-buttons { padding: 8px 20px 16px; display: flex; flex-direction: column; gap: 12px; }
-        .dl-btn { width: 100%; padding: 16px 18px; border-radius: 20px; border: none; background: linear-gradient(135deg, var(--accent), #2563eb); color: white; font-family: 'DM Sans', sans-serif; font-size: 15px; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 12px; box-shadow: 0 4px 16px rgba(26,115,232,0.3); }
-        .dl-btn-icon { width: 40px; height: 40px; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 18px; background: rgba(255,255,255,0.15); }
-        .dl-label { font-size: 15px; font-weight: 600; text-align: left; }
-        .dl-sub { font-size: 12px; color: rgba(255,255,255,0.7); margin-top: 2px; text-align: left; }
+        /* Photo Container with Overlay */
+        .main-media-container {
+            position: relative; width: 100%; aspect-ratio: 1/1;
+            border-radius: 24px; overflow: hidden;
+            background: #000;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+        }
+        .main-img { width: 100%; height: 100%; object-fit: cover; }
+        
+        /* Small Overlay Photo - The feature user requested */
+        .small-photo-overlay {
+            position: absolute; bottom: 16px; right: 16px;
+            width: 80px; height: 80px;
+            border-radius: 12px; border: 2px solid white;
+            overflow: hidden; z-index: 10;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.5);
+            background: #222;
+        }
+        .small-photo-overlay img { width: 100%; height: 100%; object-fit: cover; }
 
-        /* Downloads Page */
-        .downloads-header { padding: 16px 20px; border-bottom: 1px solid var(--border); }
-        .downloads-title { font-family: 'Syne', sans-serif; font-size: 18px; font-weight: 700; }
-        .dl-list { display: flex; flex-direction: column; }
-        .dl-item { display: flex; align-items: center; gap: 12px; padding: 12px 20px; border-bottom: 1px solid var(--border); }
-        .dl-thumb { width: 48px; height: 48px; border-radius: 8px; overflow: hidden; flex-shrink: 0; background: var(--surface); display: flex; align-items: center; justify-content: center; }
-        .dl-thumb img { width: 100%; height: 100%; object-fit: cover; }
-        .dl-info { flex: 1; min-width: 0; }
-        .dl-desc { font-size: 13px; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-        .dl-time { font-size: 11px; color: var(--muted); }
-        .dl-item-download { width: 36px; height: 36px; border-radius: 8px; border: 1px solid var(--border); background: var(--surface); color: var(--accent); cursor: pointer; display: flex; align-items: center; justify-content: center; }
+        .thumbnail-strip { display: flex; gap: 10px; overflow-x: auto; padding: 10px 20px 20px; scrollbar-width: none; }
+        .thumbnail-strip::-webkit-scrollbar { display: none; }
+        .thumb-item {
+            width: 60px; height: 60px; border-radius: 10px; flex-shrink: 0;
+            overflow: hidden; border: 2px solid transparent; opacity: 0.6; transition: 0.2s;
+        }
+        .thumb-item.active { border-color: var(--accent); opacity: 1; transform: scale(1.05); }
+        .thumb-item img { width: 100%; height: 100%; object-fit: cover; }
+
+        .video-info-card {
+            margin: 0 20px 20px; padding: 18px;
+            border-radius: 20px;
+        }
+        .user-row { display: flex; align-items: center; gap: 12px; margin-bottom: 10px; }
+        .user-avatar { width: 40px; height: 40px; border-radius: 50%; background: var(--accent); display: flex; align-items: center; justify-content: center; font-weight: bold; }
+        .user-name { font-family: 'Syne', sans-serif; font-weight: 700; color: var(--accent); }
+
+        .dl-options { padding: 0 20px; display: flex; flex-direction: column; gap: 12px; }
+        .dl-btn {
+            width: 100%; padding: 14px 18px; border-radius: 18px; border: none;
+            display: flex; align-items: center; gap: 14px;
+            background: var(--glass); border: 1px solid var(--glass-border);
+            color: var(--text); cursor: pointer; transition: 0.2s;
+        }
+        .dl-btn:active { transform: scale(0.98); background: rgba(255,255,255,0.15); }
+        .dl-icon-box {
+            width: 44px; height: 44px; border-radius: 12px;
+            background: rgba(26,115,232,0.15); display: flex; align-items: center; justify-content: center; font-size: 20px;
+        }
+        .dl-text-box { text-align: left; }
+        .dl-main-text { font-weight: 700; font-size: 15px; }
+        .dl-sub-text { font-size: 12px; color: var(--muted); margin-top: 2px; }
 
         /* Bottom Nav */
-        .bottom-nav { position: fixed; bottom: 0; left: 0; right: 0; display: flex; padding: 8px 0; background: var(--bg); border-top: 1px solid var(--border); z-index: 100; padding-bottom: env(safe-area-inset-bottom); }
-        .nav-btn { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 4px; background: none; border: none; color: var(--muted); font-size: 12px; cursor: pointer; }
-        .nav-btn.active { color: var(--accent); }
-        .nav-icon { font-size: 24px; }
+        .bottom-nav {
+            position: fixed; bottom: 0; left: 0; right: 0;
+            height: 74px; display: flex; align-items: center; justify-content: space-around;
+            background: rgba(10,10,25,0.8); backdrop-filter: blur(30px); -webkit-backdrop-filter: blur(30px);
+            border-top: 1px solid var(--glass-border); z-index: 100;
+        }
+        .nav-item { display: flex; flex-direction: column; align-items: center; gap: 4px; color: var(--muted); font-size: 11px; font-weight: 600; cursor: pointer; }
+        .nav-item.active { color: var(--accent); }
+        .nav-icon { font-size: 22px; }
 
-        /* Result Bottom Nav */
-        .result-bottom-nav { position: fixed; bottom: 0; left: 0; right: 0; height: 74px; background: var(--glass); border-top: 1px solid var(--glass-border); display: none; justify-content: space-around; align-items: center; z-index: 100; backdrop-filter: blur(30px); }
-        .result-bottom-nav.visible { display: flex; }
-        .result-nav-btn { background: none; border: none; color: var(--accent); display: flex; flex-direction: column; align-items: center; gap: 4px; font-size: 11px; font-weight: 500; cursor: pointer; }
-        .result-nav-btn svg { width: 24px; height: 24px; }
+        /* Theme Toggle */
+        .theme-btn { position: fixed; top: 16px; left: 16px; width: 44px; height: 44px; border-radius: 12px; z-index: 200; border: none; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 20px; }
 
-        @keyframes fadeDown { from { opacity: 0; transform: translateY(-20px); } to { opacity: 1; transform: translateY(0); } }
-        @keyframes fadeUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
         .dots { display: inline-flex; gap: 4px; }
-        .dots span { width: 4px; height: 4px; border-radius: 50%; background: currentColor; animation: bounce 1.4s infinite; }
+        .dots span { width: 5px; height: 5px; border-radius: 50%; background: #fff; animation: bounce 1.4s infinite; }
         .dots span:nth-child(2) { animation-delay: 0.2s; }
         .dots span:nth-child(3) { animation-delay: 0.4s; }
         @keyframes bounce { 0%, 80%, 100% { opacity: 0.3; } 40% { opacity: 1; } }
     </style>
 </head>
 <body>
+    <button class="theme-btn glass-panel" id="themeBtn" onclick="toggleTheme()">🌙</button>
+    
     <div class="toast" id="toast">
-        <div class="toast-icon" id="toastIcon">✅</div>
-        <div class="toast-text" id="toastText">Message</div>
+        <span id="toastIcon">✅</span>
+        <span id="toastText">Message</span>
     </div>
 
-    <div class="counter-badge" id="counterBadge" style="display: none;">
-        <span>📊</span><span class="counter-num" id="counterNum">0</span>
-    </div>
-
-    <button class="theme-toggle-btn" id="themeToggle" onclick="toggleTheme()">🌙</button>
-
-    <!-- HOME PAGE -->
+    <!-- Home -->
     <div class="page active" id="homePage">
-        <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; flex: 1; padding: 0 20px;">
-            <div class="logo">
-                <div class="logo-icon"><div class="logo-icon-top">🎵</div><div class="logo-icon-bottom">TK</div></div>
-                <div class="logo-text">Tik<span>Tok</span>Save</div>
+        <div class="logo">
+            <div class="logo-text">Tik<span>Tok</span>Save Pro</div>
+        </div>
+        <div class="card">
+            <h2 style="margin-bottom: 8px;">Download</h2>
+            <p style="color: var(--muted); font-size: 13px; margin-bottom: 24px;">Paste TikTok link below</p>
+            <div class="input-wrap">
+                <input type="text" id="tiktokUrl" placeholder="https://www.tiktok.com/..." />
             </div>
-            <div class="stats-row">
-                <div class="stat-item"><div class="stat-dot"></div><span>Online</span></div>
-                <div class="stat-item"><span>⚡</span><span>Fast Download</span></div>
-                <div class="stat-item"><span>🔒</span><span>No Watermark</span></div>
-            </div>
-            <div class="card">
-                <div class="card-title">Download TikTok Videos</div>
-                <div class="card-sub">Paste a link to get started</div>
-                <div class="input-wrap">
-                    <div class="input-icon">🔗</div>
-                    <input type="text" id="tiktokLink" placeholder="https://www.tiktok.com/..." />
-                    <button class="paste-btn" onclick="pasteLink()">Paste</button>
-                </div>
-                <button class="btn-primary" id="downloadBtn" onclick="processLink()">Download Now ↓</button>
-                <div class="footer-note">💡 Tip: Your downloads will be saved to Gallery/Downloads folder.</div>
-            </div>
+            <button class="btn-primary" id="processBtn" onclick="processUrl()">Download Now</button>
         </div>
     </div>
 
-    <!-- RESULT PAGE -->
+    <!-- Result -->
     <div class="page" id="resultPage">
-        <div class="result-topbar"><button class="back-btn" onclick="goHome()">← Back</button></div>
-        
-        <div id="videoWrapper" style="display: none;">
-            <div class="media-wrapper">
-                <div class="media-container" onclick="playVideo()">
-                    <img class="media-thumbnail" id="videoThumbnail" src="" />
-                    <div class="play-button-overlay">▶️</div>
-                    <div class="video-player-container" id="videoPlayerContainer"><video id="videoPlayer" controls></video></div>
+        <div style="padding: 16px 20px; display: flex; align-items: center;">
+            <button onclick="goHome()" style="background:none; border:none; color:var(--text); font-size:16px; cursor:pointer;">← Back</button>
+        </div>
+
+        <div class="media-section">
+            <div class="main-media-container">
+                <img id="mainImg" class="main-img" src="" />
+                <video id="mainVid" style="display:none; width:100%; height:100%; object-fit:contain;" controls></video>
+                
+                <!-- Small Photo Overlay requested by user -->
+                <div id="smallOverlay" class="small-photo-overlay">
+                    <img id="overlayImg" src="" />
                 </div>
             </div>
         </div>
 
-        <div class="carousel-wrapper" id="carouselWrapper">
-            <div class="media-wrapper">
-                <div class="carousel-main-container" id="carouselImagesContainer">
-                    <img class="carousel-image active" id="carouselImageMain" src="" />
-                </div>
-                <div class="thumbnail-strip" id="thumbnailStrip"></div>
+        <div id="thumbStrip" class="thumbnail-strip"></div>
+
+        <div class="video-info-card glass-panel">
+            <div class="user-row">
+                <div class="user-avatar">👤</div>
+                <div class="user-name" id="userName">@user</div>
             </div>
+            <p id="videoDesc" style="font-size: 13px; line-height: 1.4; color: var(--muted);"></p>
         </div>
 
-        <div class="video-info">
-            <div class="video-user">
-                <div class="avatar">🎵</div>
-                <div class="user-details">
-                    <div class="username" id="rUser">@user</div>
-                </div>
-            </div>
-            <div class="video-desc" id="rDesc">Video description</div>
-        </div>
-
-        <div class="dl-section-title">Download Options</div>
-        <div class="dl-buttons">
-            <button class="dl-btn" id="videoBtn" onclick="handleDownload('video')" style="display: none;">
-                <div class="dl-btn-icon">📹</div>
-                <div>
-                    <div class="dl-label">Download Video</div>
-                    <div class="dl-sub">HD · No watermark</div>
+        <div class="dl-options">
+            <button class="dl-btn" id="dlVideoBtn" onclick="download('video')" style="display:none;">
+                <div class="dl-icon-box">📹</div>
+                <div class="dl-text-box">
+                    <div class="dl-main-text">Download Video</div>
+                    <div class="dl-sub-text">HD · No Watermark</div>
                 </div>
             </button>
-            <button class="dl-btn" id="photoBtn" onclick="handleDownload('photo')" style="display: none;">
-                <div class="dl-btn-icon">🖼️</div>
-                <div>
-                    <div class="dl-label">Download All Photos</div>
-                    <div class="dl-sub" id="photoCount">Slideshow images</div>
+            <button class="dl-btn" id="dlPhotoBtn" onclick="download('photo')" style="display:none;">
+                <div class="dl-icon-box">🖼️</div>
+                <div class="dl-text-box">
+                    <div class="dl-main-text">Download All Photos</div>
+                    <div class="dl-sub-text" id="photoInfo">Batch download</div>
                 </div>
             </button>
-            <button class="dl-btn" onclick="handleDownload('music')">
-                <div class="dl-btn-icon">🎵</div>
-                <div>
-                    <div class="dl-label">Download Music</div>
-                    <div class="dl-sub">MP3 · Original sound</div>
+            <button class="dl-btn" onclick="download('music')">
+                <div class="dl-icon-box">🎵</div>
+                <div class="dl-text-box">
+                    <div class="dl-main-text">Download Music</div>
+                    <div class="dl-sub-text">MP3 · Original Sound</div>
                 </div>
             </button>
         </div>
     </div>
 
-    <!-- DOWNLOADS PAGE -->
-    <div class="page" id="downloadsPage">
-        <div class="downloads-header"><div class="downloads-title">Downloads</div></div>
-        <div class="dl-content" id="dlContent"></div>
-    </div>
-
-    <div class="bottom-nav" id="mainNav">
-        <button class="nav-btn active" id="navHome" onclick="switchTab('home')"><div class="nav-icon">🏠</div><div>Home</div></button>
-        <button class="nav-btn" id="navDl" onclick="switchTab('downloads')"><div class="nav-icon">📥</div><div>Downloads</div></button>
-    </div>
-
-    <div class="result-bottom-nav" id="resultNav">
-        <button class="result-nav-btn" onclick="goHome()">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 14L4 9l5-5"/><path d="M4 9h10.5a5.5 5.5 0 0 1 0 11H11"/></svg>
-            New Download
-        </button>
-        <button class="result-nav-btn" onclick="shareApp()">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 12v7a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-7"/><path d="M12 3v12M8.5 6.5L12 3l3.5 3.5"/></svg>
-            Share
-        </button>
+    <div class="bottom-nav" id="bottomNav">
+        <div class="nav-item active" onclick="goHome()">
+            <div class="nav-icon">🏠</div>
+            <div>Home</div>
+        </div>
+        <div class="nav-item" onclick="showToast('📥', 'History feature coming soon!')">
+            <div class="nav-icon">📥</div>
+            <div>Downloads</div>
+        </div>
     </div>
 
     <script>
-        // Telegram WebApp Initialization
-        var tg = window.Telegram.WebApp;
+        const tg = window.Telegram.WebApp;
         tg.ready();
         tg.expand();
-        
-        // State
-        var downloads = JSON.parse(localStorage.getItem('tiktok_history') || '[]');
-        var currentData = { link: '', video: '', music: '', thumb: '', photos: [], desc: '', user: '' };
-        var currentPhotoIdx = 0;
+
+        let currentData = { video: '', music: '', photos: [], thumb: '' };
 
         function showToast(icon, text) {
-            var t = document.getElementById('toast');
+            const t = document.getElementById('toast');
             document.getElementById('toastIcon').textContent = icon;
             document.getElementById('toastText').textContent = text;
             t.classList.add('show');
@@ -416,39 +287,20 @@
 
         function toggleTheme() {
             document.body.classList.toggle('light-theme');
-            localStorage.setItem('theme', document.body.classList.contains('light-theme') ? 'light' : 'dark');
-            document.getElementById('themeToggle').textContent = document.body.classList.contains('light-theme') ? '☀️' : '🌙';
+            document.getElementById('themeBtn').textContent = document.body.classList.contains('light-theme') ? '☀️' : '🌙';
         }
 
-        function switchTab(tab) {
+        function goHome() {
             document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
-            document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
-            document.getElementById('mainNav').style.display = 'flex';
-            document.getElementById('resultNav').classList.remove('visible');
-
-            if (tab === 'home') {
-                document.getElementById('homePage').classList.add('active');
-                document.getElementById('navHome').classList.add('active');
-            } else {
-                document.getElementById('downloadsPage').classList.add('active');
-                document.getElementById('navDl').classList.add('active');
-                renderDownloads();
-            }
+            document.getElementById('homePage').classList.add('active');
+            document.getElementById('mainVid').pause();
         }
 
-        function pasteLink() {
-            if (tg.readTextFromClipboard) {
-                tg.readTextFromClipboard(text => {
-                    if (text) { document.getElementById('tiktokLink').value = text; showToast('📋', 'Link pasted!'); }
-                });
-            }
-        }
-
-        function processLink() {
-            var url = document.getElementById('tiktokLink').value.trim();
+        function processUrl() {
+            const url = document.getElementById('tiktokUrl').value.trim();
             if (!url) return showToast('⚠️', 'Paste link first!');
-            
-            var btn = document.getElementById('downloadBtn');
+
+            const btn = document.getElementById('processBtn');
             btn.innerHTML = '<div class="dots"><span></span><span></span><span></span></div>';
             btn.disabled = true;
 
@@ -458,167 +310,107 @@
                 body: 'url=' + encodeURIComponent(url) + '&hd=1'
             })
             .then(res => res.json())
-            .then(data => {
-                btn.innerHTML = 'Download Now ↓';
+            .then(res => {
+                btn.innerHTML = 'Download Now';
                 btn.disabled = false;
-                if (data.code === 0) {
-                    var d = data.data;
+                if (res.code === 0) {
+                    const d = res.data;
                     currentData = {
-                        link: url,
                         video: d.hdplay || d.play,
                         music: d.music,
-                        thumb: d.cover,
                         photos: d.images || [],
-                        desc: d.title || 'TikTok Video',
-                        user: d.author ? d.author.unique_id : 'user'
+                        thumb: d.cover
                     };
 
-                    document.getElementById('rUser').textContent = '@' + currentData.user;
-                    document.getElementById('rDesc').textContent = currentData.desc;
-                    
+                    document.getElementById('userName').textContent = '@' + (d.author ? d.author.unique_id : 'user');
+                    document.getElementById('videoDesc').textContent = d.title || '';
+
                     if (currentData.photos.length > 0) {
-                        document.getElementById('carouselWrapper').classList.add('active');
-                        document.getElementById('videoWrapper').style.display = 'none';
-                        document.getElementById('photoBtn').style.display = 'flex';
-                        document.getElementById('videoBtn').style.display = 'none';
-                        document.getElementById('photoCount').textContent = currentData.photos.length + ' photos · HD';
-                        initCarousel();
+                        // Photos UI
+                        document.getElementById('mainImg').style.display = 'block';
+                        document.getElementById('mainVid').style.display = 'none';
+                        document.getElementById('smallOverlay').style.display = 'block';
+                        document.getElementById('dlPhotoBtn').style.display = 'flex';
+                        document.getElementById('dlVideoBtn').style.display = 'none';
+                        document.getElementById('photoInfo').textContent = currentData.photos.length + ' photos · HD';
+                        
+                        // Main & Overlay
+                        document.getElementById('mainImg').src = currentData.photos[0];
+                        document.getElementById('overlayImg').src = currentData.photos[0];
+
+                        // Thumbnails
+                        const strip = document.getElementById('thumbStrip');
+                        strip.innerHTML = '';
+                        currentData.photos.forEach((p, i) => {
+                            const item = document.createElement('div');
+                            item.className = 'thumb-item' + (i === 0 ? ' active' : '');
+                            item.innerHTML = `<img src="${p}">`;
+                            item.onclick = () => {
+                                document.querySelectorAll('.thumb-item').forEach(el => el.classList.remove('active'));
+                                item.classList.add('active');
+                                document.getElementById('mainImg').src = p;
+                                document.getElementById('overlayImg').src = p;
+                            };
+                            strip.appendChild(item);
+                        });
                     } else {
-                        document.getElementById('carouselWrapper').classList.remove('active');
-                        document.getElementById('videoWrapper').style.display = 'block';
-                        document.getElementById('videoBtn').style.display = 'flex';
-                        document.getElementById('photoBtn').style.display = 'none';
-                        document.getElementById('videoThumbnail').src = currentData.thumb;
-                        document.getElementById('videoPlayer').src = currentData.video;
+                        // Video UI
+                        document.getElementById('mainImg').style.display = 'none';
+                        document.getElementById('mainVid').style.display = 'block';
+                        document.getElementById('smallOverlay').style.display = 'none';
+                        document.getElementById('dlVideoBtn').style.display = 'flex';
+                        document.getElementById('dlPhotoBtn').style.display = 'none';
+                        document.getElementById('mainVid').src = currentData.video;
+                        document.getElementById('thumbStrip').innerHTML = '';
                     }
 
                     document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
                     document.getElementById('resultPage').classList.add('active');
-                    document.getElementById('mainNav').style.display = 'none';
-                    document.getElementById('resultNav').classList.add('visible');
-                    showToast('✅', 'Ready!');
+                    showToast('✅', 'Ready to download!');
                 } else {
-                    showToast('❌', 'Error fetching data');
+                    showToast('❌', 'Invalid link or error');
                 }
             })
-            .catch(() => { btn.innerHTML = 'Download Now ↓'; btn.disabled = false; showToast('❌', 'Network error'); });
-        }
-
-        function initCarousel() {
-            var strip = document.getElementById('thumbnailStrip');
-            strip.innerHTML = '';
-            currentData.photos.forEach((p, i) => {
-                var t = document.createElement('div');
-                t.className = 'thumbnail-item' + (i === 0 ? ' active' : '');
-                t.innerHTML = `<img src="${p}">`;
-                t.onclick = () => {
-                    currentPhotoIdx = i;
-                    document.getElementById('carouselImageMain').src = p;
-                    document.querySelectorAll('.thumbnail-item').forEach(el => el.classList.remove('active'));
-                    t.classList.add('active');
-                };
-                strip.appendChild(t);
+            .catch(() => {
+                btn.innerHTML = 'Download Now';
+                btn.disabled = false;
+                showToast('❌', 'Network error');
             });
-            document.getElementById('carouselImageMain').src = currentData.photos[0];
         }
 
-        function handleDownload(type) {
-            if (type === 'photo' && currentData.photos.length > 0) {
+        function download(type) {
+            if (type === 'photo') {
                 const total = currentData.photos.length;
-                showToast('📥', 'Starting download (' + total + ' photos)...');
+                showToast('📥', 'Downloading ' + total + ' photos...');
                 
-                let idx = 0;
-                function downloadNext() {
-                    if (idx >= total) {
+                let i = 0;
+                function next() {
+                    if (i >= total) {
                         showToast('✅', 'All photos downloaded!');
-                        saveToHistory();
                         return;
                     }
-                    
-                    const url = currentData.photos[idx];
-                    const filename = 'tiktok_photo_' + Date.now() + '_' + (idx + 1) + '.jpg';
-                    
-                    // Direct download attempt
-                    const a = document.createElement('a');
-                    a.href = url;
-                    a.download = filename;
-                    a.target = '_blank';
-                    document.body.appendChild(a);
-                    a.click();
-                    document.body.removeChild(a);
-                    
-                    idx++;
-                    // Very short delay (150ms) to ensure the browser registers each click 
-                    // without being blocked as spam, but fast enough for the user.
-                    setTimeout(downloadNext, 150);
+                    const url = currentData.photos[i];
+                    // Using direct link open for better mobile reliability
+                    if (tg.openLink) {
+                        tg.openLink(url);
+                    } else {
+                        window.open(url, '_blank');
+                    }
+                    i++;
+                    setTimeout(next, 800); // 0.8s delay to allow browser to handle multiple popups
                 }
-                
-                downloadNext();
-                return;
+                next();
+            } else {
+                const url = type === 'video' ? currentData.video : currentData.music;
+                if (!url) return;
+                showToast('📥', 'Downloading...');
+                if (tg.openLink) {
+                    tg.openLink(url);
+                } else {
+                    window.open(url, '_blank');
+                }
             }
-
-            var url = '';
-            var filename = 'tiktok_' + Date.now();
-            if (type === 'video') { url = currentData.video; filename += '.mp4'; }
-            else if (type === 'music') { url = currentData.music; filename += '.mp3'; }
-            if (!url) return;
-            showToast('📥', 'Downloading...');
-            if (tg.downloadFile) { tg.downloadFile({ url: url, file_name: filename }); }
-            else { tg.openLink(url); }
-            saveToHistory();
         }
-
-        function saveToHistory() {
-            downloads.unshift({
-                desc: currentData.desc,
-                thumb: currentData.thumb || (currentData.photos.length > 0 ? currentData.photos[0] : ''),
-                time: new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}),
-                link: currentData.link
-            });
-            downloads = downloads.slice(0, 50);
-            localStorage.setItem('tiktok_history', JSON.stringify(downloads));
-        }
-
-        function renderDownloads() {
-            var c = document.getElementById('dlContent');
-            if (downloads.length === 0) { c.innerHTML = '<div style="padding:40px;text-align:center;opacity:0.5;">No downloads yet</div>'; return; }
-            c.innerHTML = downloads.map((d, i) => `
-                <div class="dl-item">
-                    <div class="dl-thumb"><img src="${d.thumb}"></div>
-                    <div class="dl-info">
-                        <div class="dl-desc">${d.desc}</div>
-                        <div class="dl-time">${d.time}</div>
-                    </div>
-                    <button class="dl-item-download" onclick="reDownload(${i})">📥</button>
-                </div>
-            `).join('');
-        }
-
-        function reDownload(i) {
-            document.getElementById('tiktokLink').value = downloads[i].link;
-            processLink();
-        }
-
-        function goHome() {
-            document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
-            document.getElementById('homePage').classList.add('active');
-            switchTab('home');
-            document.getElementById('videoPlayer').pause();
-        }
-
-        function shareApp() {
-            tg.openTelegramLink('https://t.me/share/url?url=' + encodeURIComponent('https://t.me/tiktokviedodownloaderbot'));
-        }
-
-        function playVideo() {
-            var p = document.getElementById('videoPlayerContainer');
-            var v = document.getElementById('videoPlayer');
-            p.classList.toggle('playing');
-            if (p.classList.contains('playing')) v.play(); else v.pause();
-        }
-
-        // Init Theme
-        if (localStorage.getItem('theme') === 'light') toggleTheme();
     </script>
 </body>
 </html>
