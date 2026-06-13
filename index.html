@@ -283,19 +283,20 @@
                 <div class="logo-text">Tik<span>Tok</span>Save</div>
             </div>
             <div class="stats-row">
-                <div class="stat-item"><div class="stat-dot"></div><span>No Watermark</span></div>
+                <div class="stat-item"><div class="stat-dot"></div><span>No Ads</span></div>
                 <div class="stat-item"><div class="stat-dot"></div><span>HD Quality</span></div>
+                <div class="stat-item"><div class="stat-dot"></div><span>Fast</span></div>
             </div>
             <div class="card">
-                <div class="card-title">Download TikTok Videos</div>
-                <div class="card-sub">Paste a link to get started</div>
+                <div class="card-title">Download TikTok</div>
+                <div class="card-sub">Video, Photo, Music</div>
                 <div class="input-wrap">
                     <div class="input-icon">🔗</div>
-                    <input type="text" id="tiktokLink" placeholder="https://www.tiktok.com/..." />
+                    <input type="text" id="tiktokLink" placeholder="Paste TikTok link...">
                     <button class="paste-btn" onclick="pasteLink()">Paste</button>
                 </div>
                 <button class="btn-primary" id="downloadBtn" onclick="processLink()">Download Now ↓</button>
-                <div class="footer-note">💡 Tip: Your downloads will be saved to Gallery/Downloads folder.</div>
+                <div class="footer-note">✨ No watermark • No tracking • 100% Free</div>
             </div>
         </div>
     </div>
@@ -463,6 +464,7 @@
             document.getElementById('carouselImageMain').src = currentData.photos[0];
         }
 
+        // ✨ FIXED: Improved download handler with Blob-based download for photos
         function handleDownload(type) {
             var url = '';
             var filename = 'tiktok_' + Date.now();
@@ -478,19 +480,53 @@
                 if (ok) {
                     showToast('📥', 'Downloading...');
                     
-                    // Step 2: Use Telegram Native Download if available (Newer versions)
-                    if (tg.downloadFile) {
+                    // Step 2: Try Telegram's native download first (for newer versions)
+                    if (tg.downloadFile && type !== 'photo') {
+                        // Video and Music can use native download
                         tg.downloadFile({ url: url, file_name: filename });
+                        saveToHistory();
                     } else {
-                        // Step 3: Fallback to External Browser for reliable saving to Gallery
-                        // Telegram internal webview often blocks direct file saving.
-                        tg.openLink(url);
+                        // Step 3: For photos and fallback - Use Blob download method
+                        downloadViaBlob(url, filename, type);
                     }
-                    
-                    // Step 4: Save to History
-                    saveToHistory();
                 }
             });
+        }
+
+        // ✨ NEW: Blob-based download function (keeps file in app, doesn't open Chrome)
+        function downloadViaBlob(url, filename, type) {
+            fetch(url, { mode: 'no-cors' })
+                .then(res => res.blob())
+                .then(blob => {
+                    // Create a data URL from blob
+                    var blobUrl = URL.createObjectURL(blob);
+                    
+                    // Create hidden link element
+                    var link = document.createElement('a');
+                    link.href = blobUrl;
+                    link.download = filename;
+                    link.style.display = 'none';
+                    
+                    // Append to body and trigger click
+                    document.body.appendChild(link);
+                    link.click();
+                    
+                    // Cleanup
+                    setTimeout(() => {
+                        document.body.removeChild(link);
+                        URL.revokeObjectURL(blobUrl);
+                        showToast('✅', 'Downloaded!');
+                    }, 100);
+                    
+                    saveToHistory();
+                })
+                .catch(err => {
+                    console.error('Blob download failed:', err);
+                    showToast('⚠️', 'Trying alternative method...');
+                    // Fallback to direct link if blob fails
+                    tg.openLink(url);
+                    saveToHistory();
+                });
         }
 
         function saveToHistory() {
