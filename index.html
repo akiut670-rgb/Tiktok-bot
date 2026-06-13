@@ -42,7 +42,6 @@
             transition: all 0.3s ease;
         }
 
-        /* Glassmorphism Effect */
         .glass-panel {
             background: var(--glass);
             backdrop-filter: blur(20px);
@@ -50,7 +49,6 @@
             border: 1px solid var(--glass-border);
         }
 
-        /* Toast */
         .toast {
             position: fixed;
             top: 20px;
@@ -71,7 +69,6 @@
         }
         .toast.show { transform: translateX(-50%) translateY(0); }
 
-        /* Home Page */
         .page { display: none; flex-direction: column; min-height: 100vh; padding-bottom: 80px; }
         .page.active { display: flex; }
 
@@ -92,7 +89,7 @@
 
         .input-wrap { position: relative; margin-bottom: 16px; }
         input[type="text"] {
-            width: 100%; padding: 16px 70px 16px 20px;
+            width: 100%; padding: 16px 20px;
             background: rgba(255,255,255,0.06);
             border: 1px solid var(--glass-border);
             border-radius: 16px; color: var(--text);
@@ -105,11 +102,9 @@
             cursor: pointer; box-shadow: 0 8px 24px rgba(26,115,232,0.3);
         }
 
-        /* Result Page */
         #resultPage { padding: 0 0 100px; }
         .media-section { padding: 20px; position: relative; }
         
-        /* Photo Container with Overlay */
         .main-media-container {
             position: relative; width: 100%; aspect-ratio: 1/1;
             border-radius: 24px; overflow: hidden;
@@ -118,7 +113,6 @@
         }
         .main-img { width: 100%; height: 100%; object-fit: cover; }
         
-        /* Small Overlay Photo - The feature user requested */
         .small-photo-overlay {
             position: absolute; bottom: 16px; right: 16px;
             width: 80px; height: 80px;
@@ -130,7 +124,6 @@
         .small-photo-overlay img { width: 100%; height: 100%; object-fit: cover; }
 
         .thumbnail-strip { display: flex; gap: 10px; overflow-x: auto; padding: 10px 20px 20px; scrollbar-width: none; }
-        .thumbnail-strip::-webkit-scrollbar { display: none; }
         .thumb-item {
             width: 60px; height: 60px; border-radius: 10px; flex-shrink: 0;
             overflow: hidden; border: 2px solid transparent; opacity: 0.6; transition: 0.2s;
@@ -162,7 +155,6 @@
         .dl-main-text { font-weight: 700; font-size: 15px; }
         .dl-sub-text { font-size: 12px; color: var(--muted); margin-top: 2px; }
 
-        /* Bottom Nav */
         .bottom-nav {
             position: fixed; bottom: 0; left: 0; right: 0;
             height: 74px; display: flex; align-items: center; justify-content: space-around;
@@ -173,7 +165,6 @@
         .nav-item.active { color: var(--accent); }
         .nav-icon { font-size: 22px; }
 
-        /* Theme Toggle */
         .theme-btn { position: fixed; top: 16px; left: 16px; width: 44px; height: 44px; border-radius: 12px; z-index: 200; border: none; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 20px; }
 
         .dots { display: inline-flex; gap: 4px; }
@@ -185,96 +176,44 @@
 </head>
 <body>
     <button class="theme-btn glass-panel" id="themeBtn" onclick="toggleTheme()">🌙</button>
-    
-    <div class="toast" id="toast">
-        <span id="toastIcon">✅</span>
-        <span id="toastText">Message</span>
-    </div>
+    <div class="toast" id="toast"><span id="toastIcon">✅</span> <span id="toastText">Message</span></div>
 
-    <!-- Home -->
     <div class="page active" id="homePage">
-        <div class="logo">
-            <div class="logo-text">Tik<span>Tok</span>Save Pro</div>
-        </div>
+        <div class="logo"><div class="logo-text">Tik<span>Tok</span>Save Pro</div></div>
         <div class="card">
             <h2 style="margin-bottom: 8px;">Download</h2>
             <p style="color: var(--muted); font-size: 13px; margin-bottom: 24px;">Paste TikTok link below</p>
-            <div class="input-wrap">
-                <input type="text" id="tiktokUrl" placeholder="https://www.tiktok.com/..." />
-            </div>
+            <div class="input-wrap"><input type="text" id="tiktokUrl" placeholder="https://www.tiktok.com/..." /></div>
             <button class="btn-primary" id="processBtn" onclick="processUrl()">Download Now</button>
         </div>
     </div>
 
-    <!-- Result -->
     <div class="page" id="resultPage">
-        <div style="padding: 16px 20px; display: flex; align-items: center;">
-            <button onclick="goHome()" style="background:none; border:none; color:var(--text); font-size:16px; cursor:pointer;">← Back</button>
-        </div>
-
+        <div style="padding: 16px 20px;"><button onclick="goHome()" style="background:none; border:none; color:var(--text); font-size:16px; cursor:pointer;">← Back</button></div>
         <div class="media-section">
             <div class="main-media-container">
                 <img id="mainImg" class="main-img" src="" />
                 <video id="mainVid" style="display:none; width:100%; height:100%; object-fit:contain;" controls></video>
-                
-                <!-- Small Photo Overlay requested by user -->
-                <div id="smallOverlay" class="small-photo-overlay">
-                    <img id="overlayImg" src="" />
-                </div>
+                <div id="smallOverlay" class="small-photo-overlay"><img id="overlayImg" src="" /></div>
             </div>
         </div>
-
         <div id="thumbStrip" class="thumbnail-strip"></div>
-
         <div class="video-info-card glass-panel">
-            <div class="user-row">
-                <div class="user-avatar">👤</div>
-                <div class="user-name" id="userName">@user</div>
-            </div>
+            <div class="user-row"><div class="user-avatar">👤</div><div class="user-name" id="userName">@user</div></div>
             <p id="videoDesc" style="font-size: 13px; line-height: 1.4; color: var(--muted);"></p>
         </div>
-
         <div class="dl-options">
-            <button class="dl-btn" id="dlVideoBtn" onclick="download('video')" style="display:none;">
-                <div class="dl-icon-box">📹</div>
-                <div class="dl-text-box">
-                    <div class="dl-main-text">Download Video</div>
-                    <div class="dl-sub-text">HD · No Watermark</div>
-                </div>
-            </button>
-            <button class="dl-btn" id="dlPhotoBtn" onclick="download('photo')" style="display:none;">
-                <div class="dl-icon-box">🖼️</div>
-                <div class="dl-text-box">
-                    <div class="dl-main-text">Download All Photos</div>
-                    <div class="dl-sub-text" id="photoInfo">Batch download</div>
-                </div>
-            </button>
-            <button class="dl-btn" onclick="download('music')">
-                <div class="dl-icon-box">🎵</div>
-                <div class="dl-text-box">
-                    <div class="dl-main-text">Download Music</div>
-                    <div class="dl-sub-text">MP3 · Original Sound</div>
-                </div>
-            </button>
+            <button class="dl-btn" id="dlVideoBtn" onclick="download('video')" style="display:none;"><div class="dl-icon-box">📹</div><div class="dl-text-box"><div class="dl-main-text">Download Video</div><div class="dl-sub-text">HD · No Watermark</div></div></button>
+            <button class="dl-btn" id="dlPhotoBtn" onclick="download('photo')" style="display:none;"><div class="dl-icon-box">🖼️</div><div class="dl-text-box"><div class="dl-main-text">Download All Photos</div><div class="dl-sub-text" id="photoInfo">Batch download</div></div></button>
+            <button class="dl-btn" onclick="download('music')"><div class="dl-icon-box">🎵</div><div class="dl-text-box"><div class="dl-main-text">Download Music</div><div class="dl-sub-text">MP3 · Original Sound</div></div></button>
         </div>
     </div>
 
-    <div class="bottom-nav" id="bottomNav">
-        <div class="nav-item active" onclick="goHome()">
-            <div class="nav-icon">🏠</div>
-            <div>Home</div>
-        </div>
-        <div class="nav-item" onclick="showToast('📥', 'History feature coming soon!')">
-            <div class="nav-icon">📥</div>
-            <div>Downloads</div>
-        </div>
-    </div>
+    <div class="bottom-nav"><div class="nav-item active" onclick="goHome()"><div class="nav-icon">🏠</div><div>Home</div></div><div class="nav-item" onclick="showToast('📥', 'History feature coming soon!')"><div class="nav-icon">📥</div><div>Downloads</div></div></div>
 
     <script>
         const tg = window.Telegram.WebApp;
-        tg.ready();
-        tg.expand();
-
+        tg.ready(); tg.expand();
         let currentData = { video: '', music: '', photos: [], thumb: '' };
 
         function showToast(icon, text) {
@@ -299,7 +238,6 @@
         function processUrl() {
             const url = document.getElementById('tiktokUrl').value.trim();
             if (!url) return showToast('⚠️', 'Paste link first!');
-
             const btn = document.getElementById('processBtn');
             btn.innerHTML = '<div class="dots"><span></span><span></span><span></span></div>';
             btn.disabled = true;
@@ -311,34 +249,22 @@
             })
             .then(res => res.json())
             .then(res => {
-                btn.innerHTML = 'Download Now';
-                btn.disabled = false;
+                btn.innerHTML = 'Download Now'; btn.disabled = false;
                 if (res.code === 0) {
                     const d = res.data;
-                    currentData = {
-                        video: d.hdplay || d.play,
-                        music: d.music,
-                        photos: d.images || [],
-                        thumb: d.cover
-                    };
-
+                    currentData = { video: d.hdplay || d.play, music: d.music, photos: d.images || [], thumb: d.cover };
                     document.getElementById('userName').textContent = '@' + (d.author ? d.author.unique_id : 'user');
                     document.getElementById('videoDesc').textContent = d.title || '';
 
                     if (currentData.photos.length > 0) {
-                        // Photos UI
                         document.getElementById('mainImg').style.display = 'block';
                         document.getElementById('mainVid').style.display = 'none';
                         document.getElementById('smallOverlay').style.display = 'block';
                         document.getElementById('dlPhotoBtn').style.display = 'flex';
                         document.getElementById('dlVideoBtn').style.display = 'none';
                         document.getElementById('photoInfo').textContent = currentData.photos.length + ' photos · HD';
-                        
-                        // Main & Overlay
                         document.getElementById('mainImg').src = currentData.photos[0];
                         document.getElementById('overlayImg').src = currentData.photos[0];
-
-                        // Thumbnails
                         const strip = document.getElementById('thumbStrip');
                         strip.innerHTML = '';
                         currentData.photos.forEach((p, i) => {
@@ -354,7 +280,6 @@
                             strip.appendChild(item);
                         });
                     } else {
-                        // Video UI
                         document.getElementById('mainImg').style.display = 'none';
                         document.getElementById('mainVid').style.display = 'block';
                         document.getElementById('smallOverlay').style.display = 'none';
@@ -363,52 +288,31 @@
                         document.getElementById('mainVid').src = currentData.video;
                         document.getElementById('thumbStrip').innerHTML = '';
                     }
-
                     document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
                     document.getElementById('resultPage').classList.add('active');
-                    showToast('✅', 'Ready to download!');
-                } else {
-                    showToast('❌', 'Invalid link or error');
-                }
+                    showToast('✅', 'Ready!');
+                } else { showToast('❌', 'Error fetching data'); }
             })
-            .catch(() => {
-                btn.innerHTML = 'Download Now';
-                btn.disabled = false;
-                showToast('❌', 'Network error');
-            });
+            .catch(() => { btn.innerHTML = 'Download Now'; btn.disabled = false; showToast('❌', 'Network error'); });
         }
 
         function download(type) {
             if (type === 'photo') {
                 const total = currentData.photos.length;
                 showToast('📥', 'Downloading ' + total + ' photos...');
-                
                 let i = 0;
                 function next() {
-                    if (i >= total) {
-                        showToast('✅', 'All photos downloaded!');
-                        return;
-                    }
+                    if (i >= total) { showToast('✅', 'Done!'); return; }
                     const url = currentData.photos[i];
-                    // Using direct link open for better mobile reliability
-                    if (tg.openLink) {
-                        tg.openLink(url);
-                    } else {
-                        window.open(url, '_blank');
-                    }
-                    i++;
-                    setTimeout(next, 800); // 0.8s delay to allow browser to handle multiple popups
+                    if (tg.openLink) tg.openLink(url); else window.open(url, '_blank');
+                    i++; setTimeout(next, 800);
                 }
                 next();
             } else {
                 const url = type === 'video' ? currentData.video : currentData.music;
                 if (!url) return;
                 showToast('📥', 'Downloading...');
-                if (tg.openLink) {
-                    tg.openLink(url);
-                } else {
-                    window.open(url, '_blank');
-                }
+                if (tg.openLink) tg.openLink(url); else window.open(url, '_blank');
             }
         }
     </script>
