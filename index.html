@@ -220,37 +220,193 @@
 
         .carousel-wrapper { display: none; }
         .carousel-wrapper.active { display: block; }
-        .carousel-main-container { position: relative; width: 100%; aspect-ratio: 1/1; background: linear-gradient(135deg, #1a2a4e, #0f1f3e); border-radius: 20px; overflow: hidden; display: flex; align-items: center; justify-content: center; margin-bottom: 12px; }
+        .carousel-main-container { 
+            position: relative; 
+            width: 100%; 
+            aspect-ratio: 1/1; 
+            background: linear-gradient(135deg, #1a2a4e, #0f1f3e); 
+            border-radius: 20px; 
+            overflow: hidden; 
+            display: flex; 
+            align-items: center; 
+            justify-content: center; 
+            margin-bottom: 12px;
+        }
         .carousel-image { width: 100%; height: 100%; object-fit: cover; display: none; }
         .carousel-image.active { display: block; }
+        
+        /* Glass effect thumbnail overlay */
+        .thumbnail-overlay {
+            position: absolute;
+            top: 12px;
+            right: 12px;
+            width: 80px;
+            height: 80px;
+            background: var(--glass);
+            border: 1.5px solid var(--glass-border);
+            border-radius: 16px;
+            overflow: hidden;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            backdrop-filter: blur(20px);
+            box-shadow: 0 8px 32px rgba(0,0,0,0.3);
+            z-index: 15;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        .thumbnail-overlay:hover {
+            background: rgba(255,255,255,0.15);
+            border-color: var(--accent);
+            transform: scale(1.05);
+        }
+        .thumbnail-overlay img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+        
         .thumbnail-strip { display: flex; gap: 8px; overflow-x: auto; padding: 0 20px 12px; }
-        .thumbnail-item { width: 60px; height: 60px; border-radius: 8px; overflow: hidden; flex-shrink: 0; border: 2px solid transparent; opacity: 0.6; }
-        .thumbnail-item.active { border-color: var(--accent); opacity: 1; }
+        .thumbnail-item { width: 60px; height: 60px; border-radius: 8px; overflow: hidden; flex-shrink: 0; border: 2px solid transparent; opacity: 0.6; transition: all 0.3s ease; }
+        .thumbnail-item:hover { opacity: 0.8; }
+        .thumbnail-item.active { 
+            border-color: var(--accent); 
+            opacity: 1;
+            box-shadow: 0 4px 16px rgba(26,115,232,0.3);
+        }
         .thumbnail-item img { width: 100%; height: 100%; object-fit: cover; }
 
         .info-section { padding: 16px 20px; }
-        .info-item { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; margin-bottom: 12px; padding: 12px; background: var(--surface); border-radius: 12px; border: 1px solid var(--border); }
+        .info-item { 
+            display: flex; 
+            justify-content: space-between; 
+            align-items: flex-start; 
+            gap: 12px; 
+            margin-bottom: 12px; 
+            padding: 12px; 
+            background: var(--glass);
+            border-radius: 12px; 
+            border: 1px solid var(--glass-border);
+            backdrop-filter: blur(10px);
+            transition: all 0.3s ease;
+        }
+        .info-item:hover {
+            background: rgba(255,255,255,0.08);
+            border-color: rgba(255,255,255,0.15);
+        }
         .info-label { font-size: 12px; color: var(--muted); }
         .info-value { font-size: 13px; color: var(--text); text-align: right; word-break: break-word; flex: 1; }
 
         .button-group { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; padding: 16px 20px; }
-        .btn-secondary { padding: 14px 16px; border-radius: 12px; border: 1.5px solid var(--border); background: var(--surface); color: var(--text); font-size: 13px; font-weight: 600; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 6px; }
+        .btn-secondary { 
+            padding: 14px 16px; 
+            border-radius: 12px; 
+            border: 1.5px solid var(--glass-border); 
+            background: var(--glass); 
+            color: var(--text); 
+            font-size: 13px; 
+            font-weight: 600; 
+            cursor: pointer; 
+            display: flex; 
+            align-items: center; 
+            justify-content: center; 
+            gap: 6px;
+            backdrop-filter: blur(10px);
+            transition: all 0.3s ease;
+        }
+        .btn-secondary:hover {
+            background: rgba(255,255,255,0.12);
+            border-color: var(--accent);
+            box-shadow: 0 4px 16px rgba(26,115,232,0.2);
+        }
+        .btn-secondary:active {
+            transform: scale(0.95);
+        }
 
         /* Downloads Page */
-        .downloads-header { padding: 16px 20px; border-bottom: 1px solid var(--border); }
+        .downloads-header { 
+            padding: 16px 20px; 
+            border-bottom: 1px solid var(--border);
+            background: var(--glass);
+            backdrop-filter: blur(10px);
+        }
         .downloads-title { font-family: 'Syne', sans-serif; font-size: 18px; font-weight: 700; }
         .dl-list { display: flex; flex-direction: column; }
-        .dl-item { display: flex; align-items: center; gap: 12px; padding: 12px 20px; border-bottom: 1px solid var(--border); }
-        .dl-thumb { width: 48px; height: 48px; border-radius: 8px; overflow: hidden; flex-shrink: 0; background: var(--surface); display: flex; align-items: center; justify-content: center; }
+        .dl-item { 
+            display: flex; 
+            align-items: center; 
+            gap: 12px; 
+            padding: 12px 20px; 
+            border-bottom: 1px solid var(--border);
+            transition: all 0.3s ease;
+        }
+        .dl-item:hover {
+            background: var(--surface-hover);
+        }
+        .dl-thumb { 
+            width: 48px; 
+            height: 48px; 
+            border-radius: 8px; 
+            overflow: hidden; 
+            flex-shrink: 0; 
+            background: var(--glass);
+            display: flex; 
+            align-items: center; 
+            justify-content: center;
+            border: 1px solid var(--glass-border);
+        }
         .dl-thumb img { width: 100%; height: 100%; object-fit: cover; }
         .dl-info { flex: 1; min-width: 0; }
         .dl-desc { font-size: 13px; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
         .dl-time { font-size: 11px; color: var(--muted); }
-        .dl-item-download { width: 36px; height: 36px; border-radius: 8px; border: 1px solid var(--border); background: var(--surface); color: var(--accent); cursor: pointer; display: flex; align-items: center; justify-content: center; }
+        .dl-item-download { 
+            width: 36px; 
+            height: 36px; 
+            border-radius: 8px; 
+            border: 1px solid var(--glass-border); 
+            background: var(--glass); 
+            color: var(--accent); 
+            cursor: pointer; 
+            display: flex; 
+            align-items: center; 
+            justify-content: center;
+            transition: all 0.3s ease;
+            backdrop-filter: blur(10px);
+        }
+        .dl-item-download:hover {
+            background: rgba(26,115,232,0.2);
+            border-color: var(--accent);
+            box-shadow: 0 4px 12px rgba(26,115,232,0.2);
+        }
 
         /* Bottom Nav */
-        .bottom-nav { position: fixed; bottom: 0; left: 0; right: 0; display: flex; padding: 8px 0; background: var(--bg); border-top: 1px solid var(--border); z-index: 100; padding-bottom: env(safe-area-inset-bottom); }
-        .nav-btn { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 4px; background: none; border: none; color: var(--muted); font-size: 12px; cursor: pointer; }
+        .bottom-nav { 
+            position: fixed; 
+            bottom: 0; 
+            left: 0; 
+            right: 0; 
+            display: flex; 
+            padding: 8px 0; 
+            background: var(--glass);
+            border-top: 1px solid var(--border); 
+            z-index: 100; 
+            padding-bottom: env(safe-area-inset-bottom);
+            backdrop-filter: blur(20px);
+        }
+        .nav-btn { 
+            flex: 1; 
+            display: flex; 
+            flex-direction: column; 
+            align-items: center; 
+            gap: 4px; 
+            background: none; 
+            border: none; 
+            color: var(--muted); 
+            font-size: 12px; 
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        .nav-btn:hover { color: var(--accent); }
         .nav-btn.active { color: var(--accent); }
         .nav-icon { font-size: 24px; }
 
@@ -283,8 +439,8 @@
                 <div class="logo-text">Tik<span>Tok</span>Save</div>
             </div>
             <div class="stats-row">
-                <div class="stat-item"><div class="stat-dot"></div><span>No Watermark</span></div>
-                <div class="stat-item"><div class="stat-dot"></div><span>HD Quality</span></div>
+                <div class="stat-item"><div class="stat-dot"></div><span>Online</span></div>
+                <div class="stat-item"><span>⚡ HD Downloads</span></div>
             </div>
             <div class="card">
                 <div class="card-title">Download TikTok Videos</div>
@@ -314,6 +470,9 @@
             <div class="carousel-wrapper" id="carouselWrapper">
                 <div class="carousel-main-container" id="carouselImagesContainer">
                     <img class="carousel-image active" id="carouselImageMain" src="" />
+                    <div class="thumbnail-overlay" id="thumbnailOverlay" style="display: none;">
+                        <img id="overlayThumbnail" src="" />
+                    </div>
                 </div>
                 <div class="thumbnail-strip" id="thumbnailStrip"></div>
             </div>
@@ -455,12 +614,15 @@
                 t.onclick = () => {
                     currentPhotoIdx = i;
                     document.getElementById('carouselImageMain').src = p;
+                    document.getElementById('overlayThumbnail').src = p;
                     document.querySelectorAll('.thumbnail-item').forEach(el => el.classList.remove('active'));
                     t.classList.add('active');
                 };
                 strip.appendChild(t);
             });
             document.getElementById('carouselImageMain').src = currentData.photos[0];
+            document.getElementById('overlayThumbnail').src = currentData.photos[0];
+            document.getElementById('thumbnailOverlay').style.display = 'flex';
         }
 
         function handleDownload(type) {
@@ -473,24 +635,19 @@
 
             if (!url) return;
 
-            // Step 1: Notify User
-            tg.showConfirm("Gallery/Downloads ထဲသို့ သိမ်းဆည်းရန်အတွက် Download ဆွဲမည်လား?", (ok) => {
-                if (ok) {
-                    showToast('📥', 'Downloading...');
-                    
-                    // Step 2: Use Telegram Native Download if available (Newer versions)
-                    if (tg.downloadFile) {
-                        tg.downloadFile({ url: url, file_name: filename });
-                    } else {
-                        // Step 3: Fallback to External Browser for reliable saving to Gallery
-                        // Telegram internal webview often blocks direct file saving.
-                        tg.openLink(url);
-                    }
-                    
-                    // Step 4: Save to History
-                    saveToHistory();
-                }
-            });
+            // Step 1: Notify User (Directly show downloading toast instead of confirm popup)
+            showToast('📥', 'Downloading...');
+            
+            // Step 2: Use Telegram Native Download if available (Newer versions)
+            if (tg.downloadFile) {
+                tg.downloadFile({ url: url, file_name: filename });
+            } else {
+                // Step 3: Fallback to External Browser for reliable saving to Gallery
+                tg.openLink(url);
+            }
+            
+            // Step 4: Save to History
+            saveToHistory();
         }
 
         function saveToHistory() {
