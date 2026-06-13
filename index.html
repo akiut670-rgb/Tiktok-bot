@@ -7,6 +7,8 @@
     <link href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
     <!-- Load Telegram WebApp SDK -->
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <!-- Load JSZip for batch downloads -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
 
@@ -463,34 +465,53 @@
             document.getElementById('carouselImageMain').src = currentData.photos[0];
         }
 
-        function handleDownload(type) {
+        async function handleDownload(type) {
             if (type === 'photo' && currentData.photos.length > 0) {
-                showToast('📥', 'Downloading ' + currentData.photos.length + ' photos...');
+                showToast('📦', 'Preparing ZIP file...');
                 
-                // Using a recursive approach with a longer delay to ensure the OS/Browser 
-                // has time to handle each download prompt before the next one triggers.
-                let idx = 0;
-                function downloadNext() {
-                    if (idx >= currentData.photos.length) {
-                        saveToHistory();
-                        return;
-                    }
+                try {
+                    const zip = new JSZip();
+                    const folder = zip.folder("tiktok_photos");
                     
-                    let url = currentData.photos[idx];
-                    let filename = 'tiktok_photo_' + Date.now() + '_' + (idx + 1) + '.jpg';
+                    // Fetch all images
+                    const promises = currentData.photos.map(async (url, index) => {
+                        const response = await fetch(url);
+                        const blob = await response.blob();
+                        folder.file(`photo_${index + 1}.jpg`, blob);
+                    });
+                    
+                    await Promise.all(promises);
+                    
+                    showToast('📥', 'Downloading ZIP...');
+                    const content = await zip.generateAsync({type: "blob"});
+                    const zipUrl = URL.createObjectURL(content);
+                    const filename = 'tiktok_photos_' + Date.now() + '.zip';
                     
                     if (tg.downloadFile) {
-                        tg.downloadFile({ url: url, file_name: filename });
+                        // For Telegram native download, we need a real URL. 
+                        // Since blob URLs might not work with tg.downloadFile in all versions, 
+                        // we'll use a hidden anchor tag as fallback.
+                        const a = document.createElement('a');
+                        a.href = zipUrl;
+                        a.download = filename;
+                        document.body.appendChild(a);
+                        a.click();
+                        document.body.removeChild(a);
                     } else {
-                        tg.openLink(url);
+                        // Fallback to opening the blob URL
+                        const a = document.createElement('a');
+                        a.href = zipUrl;
+                        a.download = filename;
+                        document.body.appendChild(a);
+                        a.click();
+                        document.body.removeChild(a);
                     }
                     
-                    idx++;
-                    // Reduced delay to 300ms for much faster batch downloading
-                    setTimeout(downloadNext, 300);
+                    saveToHistory();
+                } catch (error) {
+                    console.error(error);
+                    showToast('❌', 'ZIP creation failed');
                 }
-                
-                downloadNext();
                 return;
             }
 
