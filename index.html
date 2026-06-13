@@ -1319,10 +1319,25 @@
     }
 
     // State
-    var downloads = [], currentLink = '', freeDownloads = 0, maxFree = 8;
+    var downloads = loadDownloads(), currentLink = '', freeDownloads = 0, maxFree = 8;
     var currentVideoUrl = '', currentMusicUrl = '', currentThumbUrl = '';
     var currentPhotos = [];
     var currentPhotoIndex = 0;
+
+    // Persist download history across sessions
+    function loadDownloads() {
+        try {
+            var saved = localStorage.getItem('tiktok_downloads');
+            return saved ? JSON.parse(saved) : [];
+        } catch (e) {
+            return [];
+        }
+    }
+    function saveDownloads() {
+        try {
+            localStorage.setItem('tiktok_downloads', JSON.stringify(downloads.slice(0, 50)));
+        } catch (e) {}
+    }
 
     // Toast notification
     function showToast(icon, text, duration) {
@@ -1626,6 +1641,21 @@
     }
 
     // Download video file
+    // Try Telegram's native "Download Document" dialog. Returns true if attempted.
+    function telegramDownload(url, filename, callback) {
+        if (tg && typeof tg.downloadFile === 'function') {
+            try {
+                tg.downloadFile({ url: url, file_name: filename }, function(accepted) {
+                    callback(accepted);
+                });
+                return true;
+            } catch (e) {
+                return false;
+            }
+        }
+        return false;
+    }
+
     function downloadVideo() {
         if (!currentVideoUrl) {
             showToast('❌', 'Video URL not found. Please try again.', 3000);
@@ -1636,15 +1666,14 @@
         var filename = 'tiktok_' + Date.now() + '.mp4';
 
         // 1) Telegram native Download dialog (Bot API 8.0+)
-        if (tg && tg.downloadFile) {
-            tg.downloadFile({ url: currentVideoUrl, file_name: filename }, function(accepted) {
-                addToDownloads();
-                if (accepted) {
-                    showToast('✅', 'Video saved!', 3000);
-                } else {
-                    showToast('ℹ️', 'Download cancelled', 2000);
-                }
-            });
+        if (telegramDownload(currentVideoUrl, filename, function(accepted) {
+            addToDownloads();
+            if (accepted) {
+                showToast('✅', 'Video saved!', 3000);
+            } else {
+                showToast('ℹ️', 'Download cancelled', 2000);
+            }
+        })) {
             return;
         }
 
@@ -1683,14 +1712,13 @@
         var filename = 'tiktok_music_' + Date.now() + '.mp3';
 
         // 1) Telegram native Download dialog (Bot API 8.0+)
-        if (tg && tg.downloadFile) {
-            tg.downloadFile({ url: currentMusicUrl, file_name: filename }, function(accepted) {
-                if (accepted) {
-                    showToast('✅', 'Music saved!', 3000);
-                } else {
-                    showToast('ℹ️', 'Download cancelled', 2000);
-                }
-            });
+        if (telegramDownload(currentMusicUrl, filename, function(accepted) {
+            if (accepted) {
+                showToast('✅', 'Music saved!', 3000);
+            } else {
+                showToast('ℹ️', 'Download cancelled', 2000);
+            }
+        })) {
             return;
         }
 
@@ -1724,6 +1752,11 @@
             thumb: currentThumbUrl,
             time: new Date().toLocaleTimeString('en-US', {hour:'2-digit', minute:'2-digit'}),
         });
+        downloads = downloads.slice(0, 50);
+        saveDownloads();
+        if (document.getElementById('downloadsPage').classList.contains('active')) {
+            renderDownloads();
+        }
     }
 
     // Go home
@@ -1776,13 +1809,12 @@
                 var filename = 'tiktok_photo_' + Date.now() + '_' + (index + 1) + '.jpg';
 
                 // 1) Telegram native Download dialog (Bot API 8.0+)
-                if (tg && tg.downloadFile) {
-                    tg.downloadFile({ url: photoUrl, file_name: filename }, function() {
-                        downloadedCount++;
-                        if (downloadedCount === totalPhotos) {
-                            showToast('✅', 'All ' + totalPhotos + ' photos saved!', 3000);
-                        }
-                    });
+                if (telegramDownload(photoUrl, filename, function() {
+                    downloadedCount++;
+                    if (downloadedCount === totalPhotos) {
+                        showToast('✅', 'All ' + totalPhotos + ' photos saved!', 3000);
+                    }
+                })) {
                     return;
                 }
 
