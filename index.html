@@ -1634,6 +1634,21 @@
         showToast('⬇️', 'Starting download...', 2000);
 
         var filename = 'tiktok_' + Date.now() + '.mp4';
+
+        // 1) Telegram native Download dialog (Bot API 8.0+)
+        if (tg && tg.downloadFile) {
+            tg.downloadFile({ url: currentVideoUrl, file_name: filename }, function(accepted) {
+                addToDownloads();
+                if (accepted) {
+                    showToast('✅', 'Video saved!', 3000);
+                } else {
+                    showToast('ℹ️', 'Download cancelled', 2000);
+                }
+            });
+            return;
+        }
+
+        // 2) Browser fetch + blob save dialog
         fetch(currentVideoUrl)
             .then(function(res) { return res.blob(); })
             .then(function(blob) {
@@ -1649,6 +1664,7 @@
                 showToast('✅', 'Download complete!', 3000);
             })
             .catch(function() {
+                // 3) Last resort: open the link
                 if (tg) { tg.openLink(currentVideoUrl); }
                 else { window.open(currentVideoUrl, '_blank'); }
                 addToDownloads();
@@ -1664,13 +1680,28 @@
         }
         showToast('🎵', 'Downloading music...', 2000);
 
+        var filename = 'tiktok_music_' + Date.now() + '.mp3';
+
+        // 1) Telegram native Download dialog (Bot API 8.0+)
+        if (tg && tg.downloadFile) {
+            tg.downloadFile({ url: currentMusicUrl, file_name: filename }, function(accepted) {
+                if (accepted) {
+                    showToast('✅', 'Music saved!', 3000);
+                } else {
+                    showToast('ℹ️', 'Download cancelled', 2000);
+                }
+            });
+            return;
+        }
+
+        // 2) Browser fetch + blob save dialog
         fetch(currentMusicUrl)
             .then(function(res) { return res.blob(); })
             .then(function(blob) {
                 var url = URL.createObjectURL(blob);
                 var a = document.createElement('a');
                 a.href = url;
-                a.download = 'tiktok_music_' + Date.now() + '.mp3';
+                a.download = filename;
                 document.body.appendChild(a);
                 a.click();
                 document.body.removeChild(a);
@@ -1678,6 +1709,7 @@
                 showToast('✅', 'Music downloaded!', 3000);
             })
             .catch(function() {
+                // 3) Last resort: open the link
                 if (tg) { tg.openLink(currentMusicUrl); }
                 else { window.open(currentMusicUrl, '_blank'); }
                 showToast('✅', 'Opening music link...', 2500);
@@ -1741,13 +1773,27 @@
 
         currentPhotos.forEach(function(photoUrl, index) {
             setTimeout(function() {
+                var filename = 'tiktok_photo_' + Date.now() + '_' + (index + 1) + '.jpg';
+
+                // 1) Telegram native Download dialog (Bot API 8.0+)
+                if (tg && tg.downloadFile) {
+                    tg.downloadFile({ url: photoUrl, file_name: filename }, function() {
+                        downloadedCount++;
+                        if (downloadedCount === totalPhotos) {
+                            showToast('✅', 'All ' + totalPhotos + ' photos saved!', 3000);
+                        }
+                    });
+                    return;
+                }
+
+                // 2) Browser fetch + blob save dialog
                 fetch(photoUrl)
                     .then(function(res) { return res.blob(); })
                     .then(function(blob) {
                         var url = URL.createObjectURL(blob);
                         var a = document.createElement('a');
                         a.href = url;
-                        a.download = 'tiktok_photo_' + Date.now() + '_' + (index + 1) + '.jpg';
+                        a.download = filename;
                         document.body.appendChild(a);
                         a.click();
                         document.body.removeChild(a);
@@ -1759,6 +1805,7 @@
                         }
                     })
                     .catch(function() {
+                        // 3) Last resort: open the link
                         if (tg) { tg.openLink(photoUrl); }
                         else { window.open(photoUrl, '_blank'); }
                         
