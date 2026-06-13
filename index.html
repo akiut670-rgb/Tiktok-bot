@@ -464,28 +464,40 @@
         }
 
         function handleDownload(type) {
+            if (type === 'photo' && currentData.photos.length > 0) {
+                showToast('📥', 'Downloading all photos...');
+                currentData.photos.forEach((url, index) => {
+                    var filename = 'tiktok_photo_' + Date.now() + '_' + (index + 1) + '.jpg';
+                    if (tg.downloadFile) {
+                        tg.downloadFile({ url: url, file_name: filename });
+                    } else {
+                        // For fallback, we can only open one link reliably at a time in most browsers
+                        // but we'll try to open them. Note: This might be blocked by popup blockers.
+                        setTimeout(() => {
+                            tg.openLink(url);
+                        }, index * 500); // Staggering to help with browser limits
+                    }
+                });
+                saveToHistory();
+                return;
+            }
+
             var url = '';
             var filename = 'tiktok_' + Date.now();
             
             if (type === 'video') { url = currentData.video; filename += '.mp4'; }
             else if (type === 'music') { url = currentData.music; filename += '.mp3'; }
-            else if (type === 'photo') { url = currentData.photos[currentPhotoIdx]; filename += '.jpg'; }
 
             if (!url) return;
 
-            // Start Download directly without confirmation
             showToast('📥', 'Downloading...');
             
-            // Use Telegram Native Download if available (Newer versions)
             if (tg.downloadFile) {
                 tg.downloadFile({ url: url, file_name: filename });
             } else {
-                // Fallback to External Browser for reliable saving to Gallery
-                // Telegram internal webview often blocks direct file saving.
                 tg.openLink(url);
             }
             
-            // Save to History
             saveToHistory();
         }
 
@@ -539,6 +551,6 @@
 
         // Init Theme
         if (localStorage.getItem('theme') === 'light') toggleTheme();
-                </script>
-                </body>
+    </script>
+    </body>
 </html>
