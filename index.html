@@ -283,20 +283,19 @@
                 <div class="logo-text">Tik<span>Tok</span>Save</div>
             </div>
             <div class="stats-row">
-                <div class="stat-item"><div class="stat-dot"></div><span>No Ads</span></div>
+                <div class="stat-item"><div class="stat-dot"></div><span>No Watermark</span></div>
                 <div class="stat-item"><div class="stat-dot"></div><span>HD Quality</span></div>
-                <div class="stat-item"><div class="stat-dot"></div><span>Fast</span></div>
             </div>
             <div class="card">
-                <div class="card-title">Download TikTok</div>
-                <div class="card-sub">Video, Photo, Music</div>
+                <div class="card-title">Download TikTok Videos</div>
+                <div class="card-sub">Paste a link to get started</div>
                 <div class="input-wrap">
                     <div class="input-icon">🔗</div>
-                    <input type="text" id="tiktokLink" placeholder="Paste TikTok link...">
+                    <input type="text" id="tiktokLink" placeholder="https://www.tiktok.com/..." />
                     <button class="paste-btn" onclick="pasteLink()">Paste</button>
                 </div>
                 <button class="btn-primary" id="downloadBtn" onclick="processLink()">Download Now ↓</button>
-                <div class="footer-note">✨ No watermark • No tracking • 100% Free</div>
+                <div class="footer-note">💡 Tip: Your downloads will be saved to Gallery/Downloads folder.</div>
             </div>
         </div>
     </div>
@@ -464,7 +463,6 @@
             document.getElementById('carouselImageMain').src = currentData.photos[0];
         }
 
-        // ✨ OPTIMIZED: No confirmation popup, instant toast, direct download
         function handleDownload(type) {
             var url = '';
             var filename = 'tiktok_' + Date.now();
@@ -475,60 +473,23 @@
 
             if (!url) return;
 
-            // ✨ Show toast IMMEDIATELY
-            showToast('📥', 'Downloading...');
-            
-            // ✨ Start download right away (no confirmation popup)
-            performDownload(url, filename, type);
-            
-            // Save to history
-            saveToHistory();
-        }
-
-        // ✨ NEW: Perform download with Telegram native or blob method
-        function performDownload(url, filename, type) {
-            // Try Telegram native download first
-            if (tg.downloadFile) {
-                try {
-                    tg.downloadFile({ url: url, file_name: filename });
-                    return;
-                } catch (e) {
-                    console.log('Native download failed, trying blob method...');
+            // Step 1: Notify User
+            tg.showConfirm("Gallery/Downloads ထဲသို့ သိမ်းဆည်းရန်အတွက် Download ဆွဲမည်လား?", (ok) => {
+                if (ok) {
+                    showToast('📥', 'Downloading...');
+                    
+                    // Step 2: Use Telegram Native Download if available (Newer versions)
+                    if (tg.downloadFile) {
+                        tg.downloadFile({ url: url, file_name: filename });
+                    } else {
+                        // Step 3: Fallback to External Browser for reliable saving to Gallery
+                        // Telegram internal webview often blocks direct file saving.
+                        tg.openLink(url);
+                    }
+                    
+                    // Step 4: Save to History
+                    saveToHistory();
                 }
-            }
-
-            // Fallback: Blob-based download
-            downloadViaBlob(url, filename);
-        }
-
-        // ✨ Blob download method
-        function downloadViaBlob(url, filename) {
-            fetch(url, { 
-                method: 'GET',
-                headers: {
-                    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
-                }
-            })
-            .then(response => response.blob())
-            .then(blob => {
-                var blobUrl = URL.createObjectURL(blob);
-                var link = document.createElement('a');
-                link.href = blobUrl;
-                link.download = filename;
-                link.style.display = 'none';
-                document.body.appendChild(link);
-                link.click();
-                
-                setTimeout(() => {
-                    document.body.removeChild(link);
-                    URL.revokeObjectURL(blobUrl);
-                    showToast('✅', 'Downloaded!');
-                }, 100);
-            })
-            .catch(error => {
-                console.error('Download error:', error);
-                showToast('⚠️', 'Download started');
-                tg.openLink(url);
             });
         }
 
@@ -583,4 +544,5 @@
         // Init Theme
         if (localStorage.getItem('theme') === 'light') toggleTheme();
     </script>
-</body>
+    </body>
+</html>
