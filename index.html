@@ -1567,20 +1567,34 @@
             showToast('❌', 'Video URL not found. Please try again.', 3000);
             return;
         }
-        showToast('⬇️', 'Opening download...', 2000);
-        if (tg && tg.openLink) {
-            tg.openLink(currentVideoUrl);
-        } else {
-            var a = document.createElement('a');
-            a.href = currentVideoUrl;
-            a.download = 'tiktok_' + Date.now() + '.mp4';
-            a.target = '_blank';
-            document.body.appendChild(a);
-            a.click();
-            document.body.removeChild(a);
-        }
-        addToDownloads();
-        showToast('✅', 'Download started! Check your browser.', 3000);
+        showToast('⬇️', 'Downloading...', 2000);
+        var filename = 'tiktok_' + Date.now() + '.mp4';
+        // Try proxy fetch to avoid CORS
+        var proxyUrl = 'https://corsproxy.io/?' + encodeURIComponent(currentVideoUrl);
+        fetch(proxyUrl)
+            .then(function(res) {
+                if (!res.ok) throw new Error('fetch failed');
+                return res.blob();
+            })
+            .then(function(blob) {
+                var url = URL.createObjectURL(blob);
+                var a = document.createElement('a');
+                a.href = url;
+                a.download = filename;
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                setTimeout(function(){ URL.revokeObjectURL(url); }, 3000);
+                addToDownloads();
+                showToast('✅', 'Download complete! Check Downloads folder.', 3000);
+            })
+            .catch(function() {
+                // Fallback: open in browser
+                if (tg && tg.openLink) { tg.openLink(currentVideoUrl); }
+                else { window.open(currentVideoUrl, '_blank'); }
+                addToDownloads();
+                showToast('✅', 'Opened in browser — tap ⋮ then Download.', 4000);
+            });
     }
 
     // Download music
@@ -1589,19 +1603,30 @@
             showToast('⚠️', 'Music not available for this video', 3000);
             return;
         }
-        showToast('🎵', 'Opening music download...', 2000);
-        if (tg && tg.openLink) {
-            tg.openLink(currentMusicUrl);
-        } else {
-            var a = document.createElement('a');
-            a.href = currentMusicUrl;
-            a.download = 'tiktok_music_' + Date.now() + '.mp3';
-            a.target = '_blank';
-            document.body.appendChild(a);
-            a.click();
-            document.body.removeChild(a);
-        }
-        showToast('✅', 'Music download started! Check your browser.', 3000);
+        showToast('🎵', 'Downloading music...', 2000);
+        var filename = 'tiktok_music_' + Date.now() + '.mp3';
+        var proxyUrl = 'https://corsproxy.io/?' + encodeURIComponent(currentMusicUrl);
+        fetch(proxyUrl)
+            .then(function(res) {
+                if (!res.ok) throw new Error('fetch failed');
+                return res.blob();
+            })
+            .then(function(blob) {
+                var url = URL.createObjectURL(blob);
+                var a = document.createElement('a');
+                a.href = url;
+                a.download = filename;
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                setTimeout(function(){ URL.revokeObjectURL(url); }, 3000);
+                showToast('✅', 'Music saved! Check Downloads folder.', 3000);
+            })
+            .catch(function() {
+                if (tg && tg.openLink) { tg.openLink(currentMusicUrl); }
+                else { window.open(currentMusicUrl, '_blank'); }
+                showToast('✅', 'Opened in browser — tap ⋮ then Download.', 4000);
+            });
     }
 
     // Add to downloads history
@@ -1648,50 +1673,55 @@
         }
     }
 
-    // Download all photos at once
+    // Download all photos individually to gallery
     function downloadAllPhotos() {
         if (currentPhotos.length === 0) {
             showToast('⚠️', 'No photos available', 3000);
             return;
         }
-        
+
         showToast('🖼️', 'Downloading ' + currentPhotos.length + ' photos...', 2500);
-
-        var downloadedCount = 0;
+        var savedCount = 0;
         var totalPhotos = currentPhotos.length;
+        var timestamp = Date.now();
 
-        currentPhotos.forEach(function(photoUrl, index) {
-            setTimeout(function() {
-                fetch(photoUrl)
-                    .then(function(res) { return res.blob(); })
-                    .then(function(blob) {
-                        var url = URL.createObjectURL(blob);
-                        var a = document.createElement('a');
-                        a.href = url;
-                        a.download = 'tiktok_photo_' + Date.now() + '_' + (index + 1) + '.jpg';
-                        document.body.appendChild(a);
-                        a.click();
-                        document.body.removeChild(a);
-                        URL.revokeObjectURL(url);
-                        
-                        downloadedCount++;
-                        if (downloadedCount === totalPhotos) {
-                            showToast('✅', 'All ' + totalPhotos + ' photos downloaded!', 3000);
-                        }
-                    })
-                    .catch(function() {
-                        if (tg) { tg.openLink(photoUrl); }
-                        else { window.open(photoUrl, '_blank'); }
-                        
-                        downloadedCount++;
-                        if (downloadedCount === totalPhotos) {
-                            showToast('✅', 'All photos processed!', 3000);
-                        }
-                    });
-            }, index * 300);
-        });
+        function downloadOne(index) {
+            if (index >= totalPhotos) return;
+            var photoUrl = currentPhotos[index];
+            var proxyUrl = 'https://corsproxy.io/?' + encodeURIComponent(photoUrl);
+            fetch(proxyUrl)
+                .then(function(res) {
+                    if (!res.ok) throw new Error('failed');
+                    return res.blob();
+                })
+                .then(function(blob) {
+                    var url = URL.createObjectURL(blob);
+                    var a = document.createElement('a');
+                    a.href = url;
+                    a.download = 'tiktok_' + timestamp + '_' + (index + 1) + '.jpg';
+                    document.body.appendChild(a);
+                    a.click();
+                    document.body.removeChild(a);
+                    setTimeout(function(){ URL.revokeObjectURL(url); }, 5000);
+                    savedCount++;
+                    if (savedCount === totalPhotos) {
+                        addToDownloads();
+                        showToast('✅', 'All ' + totalPhotos + ' photos saved to Gallery!', 3000);
+                    } else {
+                        showToast('⬇️', savedCount + '/' + totalPhotos + ' photos saved...', 1500);
+                    }
+                })
+                .catch(function() {
+                    savedCount++;
+                    if (savedCount === totalPhotos) {
+                        showToast('⚠️', 'Some photos failed. Try again.', 3000);
+                    }
+                });
+            // Next photo after delay
+            setTimeout(function(){ downloadOne(index + 1); }, 800);
+        }
 
-        addToDownloads();
+        downloadOne(0);
     }
 
     // Re-download from history
