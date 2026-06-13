@@ -464,7 +464,7 @@
             document.getElementById('carouselImageMain').src = currentData.photos[0];
         }
 
-        // ✨ FIXED: Improved download handler with Blob-based download for photos
+        // ✨ IMPROVED: Use Telegram Native Download for ALL file types (Video, Photo, Music)
         function handleDownload(type) {
             var url = '';
             var filename = 'tiktok_' + Date.now();
@@ -475,58 +475,23 @@
 
             if (!url) return;
 
-            // Step 1: Notify User
+            // Step 1: Show confirmation dialog
             tg.showConfirm("Gallery/Downloads ထဲသို့ သိမ်းဆည်းရန်အတွက် Download ဆွဲမည်လား?", (ok) => {
                 if (ok) {
-                    showToast('📥', 'Downloading...');
-                    
-                    // Step 2: Try Telegram's native download first (for newer versions)
-                    if (tg.downloadFile && type !== 'photo') {
-                        // Video and Music can use native download
+                    // Step 2: Use Telegram Native Download API for all file types
+                    if (tg.downloadFile) {
+                        // Native Telegram download - shows system confirmation popup and progress bar
                         tg.downloadFile({ url: url, file_name: filename });
+                        showToast('📥', 'Downloading...');
                         saveToHistory();
                     } else {
-                        // Step 3: For photos and fallback - Use Blob download method
-                        downloadViaBlob(url, filename, type);
+                        // Fallback: If downloadFile is not available, use openLink
+                        showToast('📥', 'Downloading...');
+                        tg.openLink(url);
+                        saveToHistory();
                     }
                 }
             });
-        }
-
-        // ✨ NEW: Blob-based download function (keeps file in app, doesn't open Chrome)
-        function downloadViaBlob(url, filename, type) {
-            fetch(url, { mode: 'no-cors' })
-                .then(res => res.blob())
-                .then(blob => {
-                    // Create a data URL from blob
-                    var blobUrl = URL.createObjectURL(blob);
-                    
-                    // Create hidden link element
-                    var link = document.createElement('a');
-                    link.href = blobUrl;
-                    link.download = filename;
-                    link.style.display = 'none';
-                    
-                    // Append to body and trigger click
-                    document.body.appendChild(link);
-                    link.click();
-                    
-                    // Cleanup
-                    setTimeout(() => {
-                        document.body.removeChild(link);
-                        URL.revokeObjectURL(blobUrl);
-                        showToast('✅', 'Downloaded!');
-                    }, 100);
-                    
-                    saveToHistory();
-                })
-                .catch(err => {
-                    console.error('Blob download failed:', err);
-                    showToast('⚠️', 'Trying alternative method...');
-                    // Fallback to direct link if blob fails
-                    tg.openLink(url);
-                    saveToHistory();
-                });
         }
 
         function saveToHistory() {
