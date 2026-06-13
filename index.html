@@ -810,17 +810,6 @@
             0%, 80%, 100% { opacity: 0.3; }
             40% { opacity: 1; }
         }
-
-        /* Telegram WebApp Safe Area */
-        @supports (padding: max(0px)) {
-            body {
-                padding-left: max(0px, env(safe-area-inset-left));
-                padding-right: max(0px, env(safe-area-inset-right));
-            }
-            .bottom-nav {
-                padding-bottom: max(8px, env(safe-area-inset-bottom));
-            }
-        }
     </style>
 </head>
 <body>
@@ -901,7 +890,7 @@
 
             <!-- Carousel Wrapper -->
             <div class="carousel-wrapper" id="carouselWrapper">
-                <div class="carousel-main-container">
+                <div class="carousel-main-container" id="carouselImagesContainer">
                     <img class="carousel-image" id="carouselImage1" src="" alt="" />
                     <img class="carousel-image" id="carouselImage2" src="" alt="" />
                     <img class="carousel-image" id="carouselImage3" src="" alt="" />
@@ -984,122 +973,6 @@
 
     <script>
         // ============================================
-        // TELEGRAM WEBAPP INITIALIZATION - FIXED
-        // ============================================
-        var tg = null;
-        var isTelegramWebApp = false;
-
-        // Load Telegram WebApp script
-        if (!window.Telegram) {
-            var script = document.createElement('script');
-            script.src = 'https://telegram.org/js/telegram-web-app.js';
-            script.onload = function() {
-                initTelegramWebApp();
-            };
-            document.head.appendChild(script);
-        } else {
-            initTelegramWebApp();
-        }
-
-        function initTelegramWebApp() {
-            try {
-                if (window.Telegram && window.Telegram.WebApp) {
-                    tg = window.Telegram.WebApp;
-                    isTelegramWebApp = true;
-                    
-                    // Initialize Telegram WebApp
-                    tg.ready();
-                    tg.expand();
-                    
-                    // Request fullscreen if available
-                    if (tg.requestFullscreen) {
-                        tg.requestFullscreen();
-                    }
-                    
-                    // Set header color
-                    if (tg.setHeaderColor) {
-                        tg.setHeaderColor('#050a18');
-                    }
-                    
-                    // Disable vertical swipes
-                    tg.disableVerticalSwipes();
-                    
-                    console.log('✅ Telegram WebApp initialized successfully');
-                } else {
-                    console.log('ℹ️ Not running in Telegram WebApp');
-                }
-            } catch(e) {
-                console.log('⚠️ Telegram WebApp init error:', e.message);
-            }
-        }
-
-        // ============================================
-        // TELEGRAM-COMPATIBLE FILE DOWNLOAD
-        // ============================================
-        function downloadFileToTelegram(url, filename) {
-            return new Promise(function(resolve, reject) {
-                // Try Telegram API first (TG 8.0+)
-                if (tg && tg.downloadFile) {
-                    try {
-                        tg.downloadFile({
-                            url: url,
-                            file_name: filename
-                        });
-                        resolve(true);
-                        return;
-                    } catch(e) {
-                        console.log('Telegram downloadFile failed:', e);
-                    }
-                }
-
-                // Fallback: Fetch + Blob + Download
-                fetch(url, {
-                    method: 'GET',
-                    headers: {
-                        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
-                    }
-                })
-                .then(function(response) {
-                    if (!response.ok) throw new Error('Network response was not ok');
-                    return response.blob();
-                })
-                .then(function(blob) {
-                    // Create blob URL
-                    var blobUrl = URL.createObjectURL(blob);
-                    
-                    // Create download link
-                    var a = document.createElement('a');
-                    a.href = blobUrl;
-                    a.download = filename;
-                    a.style.display = 'none';
-                    
-                    // Append and click
-                    document.body.appendChild(a);
-                    a.click();
-                    
-                    // Cleanup
-                    setTimeout(function() {
-                        document.body.removeChild(a);
-                        URL.revokeObjectURL(blobUrl);
-                    }, 100);
-                    
-                    resolve(true);
-                })
-                .catch(function(error) {
-                    console.error('Download error:', error);
-                    
-                    // Last resort: Open in new tab
-                    if (tg && tg.openLink) {
-                        tg.openLink(url);
-                    } else {
-                        window.open(url, '_blank');
-                    }
-                    resolve(false);
-                });
-            });
-        }
-
-        // ============================================
         // THEME MANAGEMENT
         // ============================================
         function initTheme() {
@@ -1124,15 +997,34 @@
         }
 
         // ============================================
-        // STATE MANAGEMENT
+        // TELEGRAM WEBAPP INITIALIZATION
         // ============================================
+        var tg = null;
+        try {
+            tg = window.Telegram && window.Telegram.WebApp ? window.Telegram.WebApp : null;
+            if (tg) {
+                tg.ready();
+                tg.expand();
+                if (tg.requestFullscreen) tg.requestFullscreen();
+            }
+        } catch(e) {}
+
+        function tgAlert(msg) {
+            if (tg) tg.showAlert(msg);
+            else alert(msg);
+        }
+        function tgOpenLink(url) {
+            if (tg) tg.openLink(url);
+            else window.open(url, '_blank');
+        }
+
+        // ============================================
+        // STATE MANAGEMENT - FIXED HISTORY PERSISTENCE
+        // ============================================
+        // Load history from localStorage on startup
         var downloads = JSON.parse(localStorage.getItem('tiktok_history') || '[]');
-        var currentLink = '';
-        var freeDownloads = 0;
-        var maxFree = 8;
-        var currentVideoUrl = '';
-        var currentMusicUrl = '';
-        var currentThumbUrl = '';
+        var currentLink = '', freeDownloads = 0, maxFree = 8;
+        var currentVideoUrl = '', currentMusicUrl = '', currentThumbUrl = '';
         var currentPhotos = [];
         var currentPhotoIndex = 0;
 
@@ -1164,10 +1056,19 @@
         // ============================================
         // NAVIGATION
         // ============================================
+        function showMainNav() {
+            // document.getElementById('mainNav').style.display = 'flex';
+            // document.getElementById('resultNav').classList.remove('visible');
+        }
+        function showResultNav() {
+            // document.getElementById('mainNav').style.display = 'none';
+            // document.getElementById('resultNav').classList.add('visible');
+        }
+
         function switchTab(tab) {
             document.querySelectorAll('.page').forEach(function(p){ p.classList.remove('active'); });
             document.querySelectorAll('.nav-btn').forEach(function(b){ b.classList.remove('active'); });
-            
+            showMainNav();
             if (tab === 'home') {
                 document.getElementById('homePage').classList.add('active');
                 document.getElementById('navHome').classList.add('active');
@@ -1190,23 +1091,20 @@
                     } else {
                         var inp = document.getElementById('tiktokLink');
                         inp.focus();
-                        if (tg && tg.showAlert) {
-                            tg.showAlert("Long-press the input field and tap Paste.");
-                        } else {
-                            alert("Long-press the input field and tap Paste.");
-                        }
+                        tgAlert("Long-press the input field and tap Paste.");
                     }
                 });
             } else {
                 var inp = document.getElementById('tiktokLink');
                 inp.focus();
-                if (navigator.clipboard) {
+                // Standard browser fallback if available
+                if (navigator.clipboard && navigator.clipboard.readText) {
                     navigator.clipboard.readText().then(function(text) {
                         if (text) {
                             document.getElementById('tiktokLink').value = text;
                             showToast('📋', 'Link pasted!', 2000);
                         }
-                    });
+                    }).catch(function(){});
                 }
             }
         }
@@ -1215,7 +1113,6 @@
         // CAROUSEL FUNCTIONS
         // ============================================
         function initCarousel() {
-            var container = document.getElementById('carouselImagesContainer');
             var strip = document.getElementById('thumbnailStrip');
             strip.innerHTML = '';
 
@@ -1262,8 +1159,6 @@
 
         function setupCarouselSwipe() {
             var container = document.getElementById('carouselImagesContainer');
-            if (!container) return;
-            
             var startX = 0;
             var currentX = 0;
 
@@ -1309,7 +1204,6 @@
         function processLink() {
             var link = document.getElementById('tiktokLink').value.trim();
             var btn = document.getElementById('downloadBtn');
-            
             if (!link) {
                 showToast('⚠️', 'Please paste a valid TikTok link!', 3000);
                 return;
@@ -1395,6 +1289,7 @@
 
                 document.querySelectorAll('.page').forEach(function(p){ p.classList.remove('active'); });
                 document.getElementById('resultPage').classList.add('active');
+                showResultNav();
                 updateCounter();
             })
             .catch(function(err) {
@@ -1405,102 +1300,129 @@
         }
 
         // ============================================
-        // DOWNLOAD VIDEO - TELEGRAM COMPATIBLE
+        // DOWNLOAD FUNCTIONS
         // ============================================
         function downloadVideo() {
             if (!currentVideoUrl) {
                 showToast('❌', 'Video URL not found. Please try again.', 3000);
                 return;
             }
-            
             var filename = 'tiktok_' + Date.now() + '.mp4';
             showToast('⬇️', 'Saving video...', 2000);
             
-            downloadFileToTelegram(currentVideoUrl, filename).then(function(success) {
-                addToDownloads();
-                if (success) {
+            // Try fetch + blob download first
+            fetch(currentVideoUrl)
+                .then(function(res) { return res.blob(); })
+                .then(function(blob) {
+                    var url = URL.createObjectURL(blob);
+                    var a = document.createElement('a');
+                    a.href = url;
+                    a.download = filename;
+                    document.body.appendChild(a);
+                    a.click();
+                    document.body.removeChild(a);
+                    setTimeout(function(){ URL.revokeObjectURL(url); }, 5000);
+                    addToDownloads();
                     showToast('✅', 'Video saved!', 3000);
-                } else {
-                    showToast('✅', 'Opened in browser', 3000);
-                }
-            });
+                })
+                .catch(function() {
+                    if (tg && tg.openLink) { tg.openLink(currentVideoUrl); }
+                    else { window.open(currentVideoUrl, '_blank'); }
+                    addToDownloads();
+                    showToast('✅', 'Opened in browser.', 3000);
+                });
         }
 
-        // ============================================
-        // DOWNLOAD MUSIC
-        // ============================================
         function downloadMusic() {
             if (!currentMusicUrl) {
                 showToast('⚠️', 'Music not available for this video', 3000);
                 return;
             }
-            
             var filename = 'tiktok_music_' + Date.now() + '.mp3';
             showToast('🎵', 'Saving music...', 2000);
-            
-            downloadFileToTelegram(currentMusicUrl, filename).then(function(success) {
-                if (success) {
+            fetch(currentMusicUrl)
+                .then(function(res) { return res.blob(); })
+                .then(function(blob) {
+                    var url = URL.createObjectURL(blob);
+                    var a = document.createElement('a');
+                    a.href = url;
+                    a.download = filename;
+                    document.body.appendChild(a);
+                    a.click();
+                    document.body.removeChild(a);
+                    setTimeout(function(){ URL.revokeObjectURL(url); }, 5000);
                     showToast('✅', 'Music saved!', 3000);
-                } else {
-                    showToast('✅', 'Opened in browser', 3000);
-                }
-            });
+                })
+                .catch(function() {
+                    if (tg && tg.openLink) { tg.openLink(currentMusicUrl); }
+                    else { window.open(currentMusicUrl, '_blank'); }
+                    showToast('✅', 'Opened in browser.', 3000);
+                });
         }
 
-        // ============================================
-        // DOWNLOAD ALL PHOTOS
-        // ============================================
         function downloadAllPhotos() {
             if (currentPhotos.length === 0) {
                 showToast('⚠️', 'No photos available', 3000);
                 return;
             }
-            
             var totalPhotos = currentPhotos.length;
             var timestamp = Date.now();
             showToast('🖼️', 'Saving ' + totalPhotos + ' photos...', 2000);
 
-            var downloadedCount = 0;
-            var failedCount = 0;
-
-            currentPhotos.forEach(function(photoUrl, index) {
-                setTimeout(function() {
-                    var filename = 'tiktok_' + timestamp + '_' + (index + 1) + '.jpg';
-                    downloadFileToTelegram(photoUrl, filename).then(function(success) {
-                        if (success) {
-                            downloadedCount++;
-                        } else {
-                            failedCount++;
-                        }
-                        
-                        if (downloadedCount + failedCount === totalPhotos) {
+            var savedCount = 0;
+            function downloadOne(index) {
+                if (index >= totalPhotos) return;
+                var photoUrl = currentPhotos[index];
+                fetch(photoUrl)
+                    .then(function(res) { return res.blob(); })
+                    .then(function(blob) {
+                        var url = URL.createObjectURL(blob);
+                        var a = document.createElement('a');
+                        a.href = url;
+                        a.download = 'tiktok_' + timestamp + '_' + (index + 1) + '.jpg';
+                        document.body.appendChild(a);
+                        a.click();
+                        document.body.removeChild(a);
+                        setTimeout(function(){ URL.revokeObjectURL(url); }, 5000);
+                        savedCount++;
+                        if (savedCount === totalPhotos) {
                             addToDownloads();
-                            if (downloadedCount > 0) {
-                                showToast('✅', 'Downloaded ' + downloadedCount + '/' + totalPhotos + ' photos', 3000);
-                            } else {
-                                showToast('⚠️', 'Could not download photos', 3000);
-                            }
+                            showToast('✅', 'All ' + totalPhotos + ' photos saved!', 3000);
                         }
+                    })
+                    .catch(function() {
+                        savedCount++;
                     });
-                }, index * 300);
-            });
+                setTimeout(function(){ downloadOne(index + 1); }, 600);
+            }
+            downloadOne(0);
         }
 
         // ============================================
-        // ADD TO DOWNLOADS HISTORY
+        // HISTORY PERSISTENCE - FIXED
         // ============================================
         function addToDownloads() {
+            // Add to the beginning of the array
             downloads.unshift({
                 link: currentLink,
                 desc: document.getElementById('rDesc').textContent,
                 thumb: currentThumbUrl,
                 time: new Date().toLocaleTimeString('en-US', {hour:'2-digit', minute:'2-digit'}),
             });
-            localStorage.setItem('tiktok_history', JSON.stringify(downloads.slice(0, 50)));
+            
+            // Keep only the latest 50 items
+            downloads = downloads.slice(0, 50);
+            
+            // Save to localStorage
+            localStorage.setItem('tiktok_history', JSON.stringify(downloads));
+            
+            // Update the count UI
+            var dlCount = document.getElementById('dlCount');
+            if (dlCount) dlCount.textContent = downloads.length + ' video' + (downloads.length !== 1 ? 's' : '');
         }
 
         // ============================================
-        // GO HOME
+        // UI HELPERS
         // ============================================
         function goHome() {
             document.querySelectorAll('.page').forEach(function(p){ p.classList.remove('active'); });
@@ -1508,6 +1430,7 @@
             document.getElementById('homePage').classList.add('active');
             document.getElementById('navHome').classList.add('active');
             document.getElementById('tiktokLink').value = '';
+            showMainNav();
 
             document.getElementById('carouselWrapper').classList.remove('active');
             document.getElementById('videoWrapper').style.display = 'none';
@@ -1517,14 +1440,10 @@
             document.getElementById('videoPlayerContainer').classList.remove('playing');
         }
 
-        // ============================================
-        // SHARE
-        // ============================================
         function shareVideo() {
             var shareText = 'Download TikTok videos without watermark! Try this bot:';
             var botLink = 'https://t.me/tiktokviedodownloaderbot';
-            
-            if (tg && tg.openTelegramLink) {
+            if (tg) {
                 var shareUrl = 'https://t.me/share/url?url=' + encodeURIComponent(botLink) + '&text=' + encodeURIComponent(shareText);
                 tg.openTelegramLink(shareUrl);
             } else if (navigator.share) {
@@ -1534,9 +1453,6 @@
             }
         }
 
-        // ============================================
-        // RE-DOWNLOAD FROM HISTORY
-        // ============================================
         function redownloadItem(index) {
             var item = downloads[index];
             if (item && item.link) {
@@ -1545,12 +1461,10 @@
             }
         }
 
-        // ============================================
-        // RENDER DOWNLOADS
-        // ============================================
         function renderDownloads() {
             var content = document.getElementById('dlContent');
-            document.getElementById('dlCount').textContent = downloads.length + ' video' + (downloads.length !== 1 ? 's' : '');
+            var dlCount = document.getElementById('dlCount');
+            if (dlCount) dlCount.textContent = downloads.length + ' video' + (downloads.length !== 1 ? 's' : '');
 
             if (downloads.length === 0) {
                 content.innerHTML = '<div class="empty-wrap"><div class="empty-icon">📥</div><div class="empty-text">No downloads yet</div><div class="empty-sub">Your downloaded videos will appear here</div></div>';
@@ -1568,14 +1482,10 @@
             content.innerHTML = html;
         }
 
-        // ============================================
-        // HELPERS
-        // ============================================
         function extractUser(link) {
             var match = link.match(/@([^/?]+)/);
             return match ? match[1] : 'user';
         }
-
         function formatDate() {
             var d = new Date();
             return ('0'+d.getDate()).slice(-2)+'.'+('0'+(d.getMonth()+1)).slice(-2)+'.'+d.getFullYear();
@@ -1587,5 +1497,5 @@
         initTheme();
         updateCounter();
     </script>
-    </body>
-  </html>
+</body>
+</html>
