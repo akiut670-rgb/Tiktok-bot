@@ -464,7 +464,7 @@
             document.getElementById('carouselImageMain').src = currentData.photos[0];
         }
 
-        // ✨ IMPROVED: Use Telegram Native Download for ALL file types (Video, Photo, Music)
+        // ✨ ULTIMATE: Hybrid approach - Blob download + Telegram native behavior
         function handleDownload(type) {
             var url = '';
             var filename = 'tiktok_' + Date.now();
@@ -478,19 +478,61 @@
             // Step 1: Show confirmation dialog
             tg.showConfirm("Gallery/Downloads ထဲသို့ သိမ်းဆည်းရန်အတွက် Download ဆွဲမည်လား?", (ok) => {
                 if (ok) {
-                    // Step 2: Use Telegram Native Download API for all file types
-                    if (tg.downloadFile) {
-                        // Native Telegram download - shows system confirmation popup and progress bar
-                        tg.downloadFile({ url: url, file_name: filename });
-                        showToast('📥', 'Downloading...');
-                        saveToHistory();
-                    } else {
-                        // Fallback: If downloadFile is not available, use openLink
-                        showToast('📥', 'Downloading...');
-                        tg.openLink(url);
-                        saveToHistory();
-                    }
+                    showToast('📥', 'Downloading...');
+                    
+                    // Step 2: For all types, fetch as blob and create download link
+                    downloadAsBlob(url, filename, type);
+                    saveToHistory();
                 }
+            });
+        }
+
+        // ✨ NEW: Blob-based download with proper file handling
+        function downloadAsBlob(url, filename, type) {
+            // Add CORS proxy if needed
+            var proxyUrl = 'https://cors-anywhere.herokuapp.com/';
+            var fetchUrl = url;
+            
+            // Try direct fetch first
+            fetch(fetchUrl, { 
+                method: 'GET',
+                headers: {
+                    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
+                }
+            })
+            .then(response => {
+                if (!response.ok) throw new Error('Network response was not ok');
+                return response.blob();
+            })
+            .then(blob => {
+                // Create blob URL
+                var blobUrl = URL.createObjectURL(blob);
+                
+                // Create hidden link for download
+                var link = document.createElement('a');
+                link.href = blobUrl;
+                link.download = filename;
+                link.style.display = 'none';
+                
+                // Append to body and click
+                document.body.appendChild(link);
+                link.click();
+                
+                // Cleanup
+                setTimeout(() => {
+                    document.body.removeChild(link);
+                    URL.revokeObjectURL(blobUrl);
+                    showToast('✅', 'Downloaded!');
+                }, 100);
+            })
+            .catch(error => {
+                console.error('Blob download error:', error);
+                showToast('⚠️', 'Retrying with direct link...');
+                
+                // Fallback: Use direct link via Telegram
+                setTimeout(() => {
+                    tg.openLink(url);
+                }, 500);
             });
         }
 
