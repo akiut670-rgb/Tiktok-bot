@@ -464,7 +464,7 @@
             document.getElementById('carouselImageMain').src = currentData.photos[0];
         }
 
-        // ✨ ULTIMATE: Hybrid approach - Blob download + Telegram native behavior
+        // ✨ OPTIMIZED: No confirmation popup, instant toast, direct download
         function handleDownload(type) {
             var url = '';
             var filename = 'tiktok_' + Date.now();
@@ -475,50 +475,50 @@
 
             if (!url) return;
 
-            // Step 1: Show confirmation dialog
-            tg.showConfirm("Gallery/Downloads ထဲသို့ သိမ်းဆည်းရန်အတွက် Download ဆွဲမည်လား?", (ok) => {
-                if (ok) {
-                    showToast('📥', 'Downloading...');
-                    
-                    // Step 2: For all types, fetch as blob and create download link
-                    downloadAsBlob(url, filename, type);
-                    saveToHistory();
-                }
-            });
+            // ✨ Show toast IMMEDIATELY
+            showToast('📥', 'Downloading...');
+            
+            // ✨ Start download right away (no confirmation popup)
+            performDownload(url, filename, type);
+            
+            // Save to history
+            saveToHistory();
         }
 
-        // ✨ NEW: Blob-based download with proper file handling
-        function downloadAsBlob(url, filename, type) {
-            // Add CORS proxy if needed
-            var proxyUrl = 'https://cors-anywhere.herokuapp.com/';
-            var fetchUrl = url;
-            
-            // Try direct fetch first
-            fetch(fetchUrl, { 
+        // ✨ NEW: Perform download with Telegram native or blob method
+        function performDownload(url, filename, type) {
+            // Try Telegram native download first
+            if (tg.downloadFile) {
+                try {
+                    tg.downloadFile({ url: url, file_name: filename });
+                    return;
+                } catch (e) {
+                    console.log('Native download failed, trying blob method...');
+                }
+            }
+
+            // Fallback: Blob-based download
+            downloadViaBlob(url, filename);
+        }
+
+        // ✨ Blob download method
+        function downloadViaBlob(url, filename) {
+            fetch(url, { 
                 method: 'GET',
                 headers: {
                     'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
                 }
             })
-            .then(response => {
-                if (!response.ok) throw new Error('Network response was not ok');
-                return response.blob();
-            })
+            .then(response => response.blob())
             .then(blob => {
-                // Create blob URL
                 var blobUrl = URL.createObjectURL(blob);
-                
-                // Create hidden link for download
                 var link = document.createElement('a');
                 link.href = blobUrl;
                 link.download = filename;
                 link.style.display = 'none';
-                
-                // Append to body and click
                 document.body.appendChild(link);
                 link.click();
                 
-                // Cleanup
                 setTimeout(() => {
                     document.body.removeChild(link);
                     URL.revokeObjectURL(blobUrl);
@@ -526,13 +526,9 @@
                 }, 100);
             })
             .catch(error => {
-                console.error('Blob download error:', error);
-                showToast('⚠️', 'Retrying with direct link...');
-                
-                // Fallback: Use direct link via Telegram
-                setTimeout(() => {
-                    tg.openLink(url);
-                }, 500);
+                console.error('Download error:', error);
+                showToast('⚠️', 'Download started');
+                tg.openLink(url);
             });
         }
 
@@ -588,4 +584,3 @@
         if (localStorage.getItem('theme') === 'light') toggleTheme();
     </script>
 </body>
-</html>
