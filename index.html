@@ -473,24 +473,20 @@
 
             if (!url) return;
 
-            // Step 1: Notify User
-            tg.showConfirm("Gallery/Downloads ထဲသို့ သိမ်းဆည်းရန်အတွက် Download ဆွဲမည်လား?", (ok) => {
-                if (ok) {
-                    showToast('📥', 'Downloading...');
-                    
-                    // Step 2: Use Telegram Native Download if available (Newer versions)
-                    if (tg.downloadFile) {
-                        tg.downloadFile({ url: url, file_name: filename });
-                    } else {
-                        // Step 3: Fallback to External Browser for reliable saving to Gallery
-                        // Telegram internal webview often blocks direct file saving.
-                        tg.openLink(url);
-                    }
-                    
-                    // Step 4: Save to History
-                    saveToHistory();
-                }
-            });
+            // Start Download directly without confirmation
+            showToast('📥', 'Downloading...');
+            
+            // Use Telegram Native Download if available (Newer versions)
+            if (tg.downloadFile) {
+                tg.downloadFile({ url: url, file_name: filename });
+            } else {
+                // Fallback to External Browser for reliable saving to Gallery
+                // Telegram internal webview often blocks direct file saving.
+                tg.openLink(url);
+            }
+            
+            // Save to History
+            saveToHistory();
         }
 
         function saveToHistory() {
@@ -543,6 +539,6 @@
 
         // Init Theme
         if (localStorage.getItem('theme') === 'light') toggleTheme();
-    </script>
-    </body>
+                </script>
+                </body>
 </html>
